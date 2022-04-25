@@ -7,7 +7,7 @@ source('/home/as1052/parameter_fitting/src/linear_model/projsplx.R')
 source('/home/as1052/parameter_fitting/src/align_Q.R')
 
 args = commandArgs(trailingOnly=TRUE);
-if(length(args) !=4 ) {stop("need exact 4 arguements\nRscript AdmixCor kinship.txt(tab delimited file) K(number of populations) ", call.=FALSE); }
+if(length(args) !=4 ) {stop("need exact 5 arguements\nRscript AdmixCor kinship.txt(tab delimited file) K(number of populations) ", call.=FALSE); }
 
 coances=args[1]
 K=as.numeric(args[2])
@@ -15,6 +15,8 @@ K=as.numeric(args[2])
 Theta<-as.matrix(read.table(coances, header = FALSE, sep = "\t")) #coancestry matrix
 Qin<-as.matrix(read.table(args[3], header = FALSE, sep = "\t")) #admixture matrix
 Psiin<-as.matrix(read.table(args[4], header = FALSE, sep = "\t")) #Psi matrix
+#stop<-as.numeric(args[5])
+stop<-1e-15
 
 n<-nrow(Theta)
 normz<-norm(Theta,"F")
@@ -25,7 +27,7 @@ ThetaSR<-Theta_square_root(Theta,K)
 Vars<-Initialize(Theta,ThetaSR,K,n)
 
 I<-diag(1,K,K)
-gamma<-0.005
+gamma<-0.00
 
 ndQ<-100
 ndPsiSR<-100
@@ -40,7 +42,7 @@ minf<-100
 ptm <- proc.time()
 
 nstep<-0
-while(ndQ>1e-08 && ndPsiSR>1e-08 && ndR>1e-08)
+while(ndQ>stop && ndPsiSR>stop && ndR>stop)
 {
 	Qinv<-ginv(Q0)
 	R1<-ginv(PsiSR0)%*%Qinv%*%ThetaSR
@@ -66,7 +68,7 @@ while(ndQ>1e-08 && ndPsiSR>1e-08 && ndR>1e-08)
 	ndQ<-norm((Q0-Q1),"F")/sqrt(n*K)
 	ndPsiSR<-norm((PsiSR0-PsiSR1),"F")/K
 	ndR<-norm((R0-R1),"F")/K
-	f1<-Objective(ThetaSR, Q1, PsiSR1, R1)
+	f1<-Objective(Theta, Q1, PsiSR1, n, K)
 
 	Q0<-Q1
 	PsiSR0<-PsiSR1
@@ -75,7 +77,7 @@ while(ndQ>1e-08 && ndPsiSR>1e-08 && ndR>1e-08)
 
 	if(nstep%%1000==0) 
 	{
-		message(ndQ,' ',ndPsiSR,' ',ndR,' ',f1/(n*K))
+		message(ndQ,' ',ndPsiSR,' ',ndR,' ',f1)
 		#print(Q0)
 		#print(PsiSR0)
 	}
@@ -107,4 +109,4 @@ Pin2<-Psiin
 Ptemp[lower.tri(Ptemp)] <- 0
 Pin2[lower.tri(Pin2)] <- 0
 
-message(err,' ',norm((Pin2-Ptemp),"F")*sqrt(2/(K*(K+1))),' ',minf/(n*K),' ',ptm[3])
+message(err,' ',norm((Pin2-Ptemp),"F")*sqrt(2/(K*(K+1))),' ',minf,' ',ptm[3])

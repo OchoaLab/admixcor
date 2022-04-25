@@ -1,6 +1,7 @@
 
 
-Objective<-function(ThetaSR, Q, PsiSR, R)
+Objective<-function(Theta, Q, PsiSR, n, K)
 {
-	return(norm(ThetaSR-(Q%*%PsiSR%*%R)))
+	Psi<-PsiSR%*%t(PsiSR)
+	return(norm(Theta-(Q%*%Psi%*%t(Q)))/sqrt(n*K))
 }

@@ -15,6 +15,12 @@ Initialize<-function(Theta,ThetaSR,k,n)
 		}
 	}
 
+	#for(i in 1:n)
+        #{
+	#	Q[i,1]<-0.5
+	#	Q[i,2]<-0.5
+	#}
+
 	#PsiSR<-diag(runif(k),k,k)
 	#PsiSR<-matrix(runif(k*k),k,k)
 	PsiSR<-matrix(1,k,k)
@@ -23,7 +29,7 @@ Initialize<-function(Theta,ThetaSR,k,n)
 	
 	R<-diag(1,k,k)
 
-	f<-Objective(ThetaSR,Q,PsiSR,R)
+	f<-Objective(Theta,Q,PsiSR,n,K)
 
 	result<-list(Q=Q,PsiSR=PsiSR,R=R,f=f)
 
