@@ -10,6 +10,8 @@ source('../R/Initialize.R')
 source('../R/projsplx.R')
 source('../R/admixcor.R')
 source('../R/align_Q.R')
+source('../R/rmsd_Q_mat.R')
+source('../R/rmsd_Q.R')
 
 args = commandArgs(trailingOnly=TRUE);
 if ( length(args) != 6 )
