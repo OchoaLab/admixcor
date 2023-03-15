@@ -18,7 +18,8 @@ RoxygenNote: 7.2.3
 Imports:
     stats,
     gtools,
-    MASS
+    MASS,
+    tibble
 Suggests: 
     testthat (>= 3.0.0)
 Config/testthat/edition: 3

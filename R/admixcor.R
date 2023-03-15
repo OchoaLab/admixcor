@@ -1,82 +1,163 @@
-admixcor <- function( Theta, K, gamma = 0.01, stop = 1e-15, verbose = FALSE ) {
+admixcor <- function(
+                     Theta,
+                     K,
+                     gamma = 0.01,
+                     delta = 0.01,
+                     stop = 1e-15,
+                     nstep_max = 100000,
+                     report_freq = 1000
+                     ) {
     n<-nrow(Theta)
-    normz<-norm(Theta,"F")
 
+    # decompose Theta for "linear" objective
     ThetaSR<-Theta_square_root(Theta,K)
-    Vars<-Initialize(Theta,K,n)
+    # normalization factor that puts penalty terms in equal footing
+    normz <- norm( ThetaSR, "F" )^2
+    # apply to parameters
+    gamma <- gamma * normz
+    delta <- delta * normz
+    #message( 'normz: ', normz )
+    
+    # initialize other variables
+    Vars <- Initialize( Theta, ThetaSR, K, n, gamma, delta )
+    Q0 <- Vars$Q
+    L0 <- Vars$L
+    R0 <- Vars$R
+    f0 <- Vars$f
 
+    # constant used in regularized expressions
     I<-diag(1,K,K)
-    
+
+    # initialize gradient norms to ensure first iteration occurs
     ndQ<-100
-    ndPsiSR<-100
+    ndL<-100
     ndR<-100
+    f_best <- 100
 
-    Q0<-Vars[[1]]
-    PsiSR0<-Vars[[2]]
-    R0<-Vars[[3]]
-    f0<-Vars[[4]]
-    minf<-100
-
-    if (verbose)
-        message("ndQ\tndPsiSR\tndR\tObjective")
-    
+    # initialize counter
     nstep<-0
-    while(ndQ>stop && ndPsiSR>stop && ndR>stop)
-    {
+
+    # initialize select values to save for report
+    # values of starting point
+    nsteps <- -1
+    ndQs <- NA
+    ndLs <- NA
+    ndRs <- NA
+    objs <- f0
+    dobjs <- NA
+
+    while (ndQ>stop && ndL>stop && ndR>stop) {
+        # update R (rotation)
 	Qinv<-MASS::ginv(Q0)
-	R1<-MASS::ginv(PsiSR0)%*%Qinv%*%ThetaSR
-	svd<-svd(R1)
-        u<-svd$u
-        v<-svd$v
-        R1<-u%*%t(v)
+	R1<-MASS::ginv(L0) %*% Qinv %*% ThetaSR
+        # project updated R to rotation space
+        # simply replaces eigenvalues with ones
+	svd <- svd( R1 )
+        R1 <- tcrossprod( svd$u, svd$v )
 
-	QT<-t(Q0)
-	PsiSR1<-MASS::ginv(QT%*%Q0+gamma*I)%*%QT%*%ThetaSR%*%t(R1)
-	#PsiSR1<-MASS::ginv(Q1)%*%ThetaSR%*%t(R1)
-	PsiSR1[lower.tri(PsiSR1)] <- 0
-	PsiSR1[PsiSR1<0]<-0
-	PsiSR1[PsiSR1>1]<-1
-	
-	Q1<-ThetaSR%*%t(R1)%*%MASS::ginv(PsiSR1)
-	for(j in 1:n){
-            #Q1[j,]=ifelse(Q1[j,]<0.0,Q1[j,]-min(Q1[j,])+0.0001,Q1[j,])
-            Q1[j,]<-projsplx(Q1[j,])
-	}
-	#Q1<-Q1/rowSums(Q1)
+        # update L (square root of Psi)
+	L1<-tcrossprod( MASS::ginv( crossprod( Q0 ) + gamma*I) %*% crossprod( Q0, ThetaSR ), R1 ) # regularized L
+	#L1<-tcrossprod( MASS::ginv(Q1)%*%ThetaSR, R1 ) # unregularized L
+        # project L to non-negative Cholesky space
+	L1[lower.tri(L1)] <- 0
+	L1[L1<0]<-0
+	L1[L1>1]<-1
 
+        # update Q (admixture)
+	Q1 <- tcrossprod( ThetaSR, R1 ) %*% MASS::ginv(L1)
+        # project Q to simplex
+        Q1 <- t( apply( Q1, 1L, projsplx ) )
+        ## # old projection hack, did not perform as well
+	## for (j in 1:n) {
+        ##     Q1[j,]=ifelse(Q1[j,]<0.0,Q1[j,]-min(Q1[j,])+0.0001,Q1[j,])
+	## }
+	## Q1<-Q1/rowSums(Q1)
+
+        # calculate step sizes, to assess convergence
 	ndQ<-norm((Q0-Q1),"F")/sqrt(n*K)
-	ndPsiSR<-norm((PsiSR0-PsiSR1),"F")/K
+	ndL<-norm((L0-L1),"F")/K
 	ndR<-norm((R0-R1),"F")/K
-	f1<-Objective(Theta, Q1, PsiSR1, n, K)
+        
+        # calculate new objective
+	f1 <- Objective( ThetaSR, Q1, L1, R1, gamma, delta )
+        # and its delta too (this matches norm formulations above)
+        # use first value only (total objective, including penalty terms!)
+        df <- abs( f1[1L] - f0[1L] )
 
+        # update variables for next iteration
 	Q0<-Q1
-	PsiSR0<-PsiSR1
+	L0<-L1
 	R0<-R1
 	f0<-f1
 
-	if(nstep%%1000==0) 
-	{
-            if (verbose)
-                message(ndQ,"\t",ndPsiSR,"\t",ndR,"\t",f1)
+        # update report infrequently
+	if ( nstep %% report_freq == 0) {
+            # increment report
+            nsteps <- c( nsteps, nstep )
+            ndQs <- c( ndQs, ndQ )
+            ndLs <- c( ndLs, ndL )
+            ndRs <- c( ndRs, ndR )
+            objs <- rbind( objs, f0 ) # this is a matrix!
+            dobjs <- c( dobjs, df )
             #print(Q0)
-            #print(PsiSR0)
+            #print(L0)
+	}
+
+        # decide if this is better than previous best, based on total objective (including penalties)
+	if ( f_best[1L] > f0[1L] ) {
+            f_best<-f0
+            Q_best<-Q0
+            L_best<-L0
+            # nice extra info, mostly for troubleshooting
+            nstep_best <- nstep
+            ndQ_best <- ndQ
+            ndL_best <- ndL
+            ndR_best <- ndR
+            df_best <- df
 	}
 	nstep<-nstep+1
-	if(minf>f0)
-	{
-            minf<-f0
-            Qfinal<-Q0
-            PsiSRfinal<-PsiSR0
-	}
-	if(nstep>100000) break
-
+	if (nstep>nstep_max) break
     }
-
-    Psifinal<-PsiSRfinal%*%t(PsiSRfinal)
+    
+    # report final iteration info
+    # nstep-1 because we incremented without a change in last case (and it starts from zero because we don't want to change things)
+    # increment report
+    nsteps <- c( nsteps, nstep-1 )
+    ndQs <- c( ndQs, ndQ )
+    ndLs <- c( ndLs, ndL )
+    ndRs <- c( ndRs, ndR )
+    objs <- rbind( objs, f0 ) # this is a matrix!
+    dobjs <- c( dobjs, df )
+    # compare data for best
+    nsteps <- c( nsteps, nstep_best )
+    ndQs <- c( ndQs, ndQ_best )
+    ndLs <- c( ndLs, ndL_best )
+    ndRs <- c( ndRs, ndR_best )
+    objs <- rbind( objs, f_best ) # this is a matrix!
+    dobjs <- c( dobjs, df_best )
+    # finalize report
+    report <- tibble::tibble(
+                          nstep = nsteps,
+                          dQ = ndQs,
+                          dL = ndLs,
+                          dR = ndRs,
+                          # treat matrix cases accordingly, extracting columns as needed
+                          obj = objs[,1L],
+                          dobj = dobjs,
+                          O = objs[,2L],
+                          pL = objs[,3L],
+                          pQ = objs[,4L]
+                      )
+    
+    # compose final Psi
+    Psi_best <- tcrossprod( L_best )
+    
     return(
         list(
-            Q = Qfinal,
-            Psi = Psifinal
+            Q = Q_best,
+            Psi = Psi_best,
+            f = f_best[1L], # only first value makes most sense in this context
+            report = report
         )
     )
 }

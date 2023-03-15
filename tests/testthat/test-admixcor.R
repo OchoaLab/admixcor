@@ -1,3 +1,5 @@
+library(tibble)
+
 n <- 10L
 K <- 3L
 # create a random Q
@@ -10,6 +12,9 @@ Q2 <- Q2 / rowSums( Q2 ) # normalize as they should be
 Psi <- diag( runif( K ), K )
 # create a Theta that goes with these matrices
 Theta <- tcrossprod( Q %*% Psi, Q )
+# some default values for the regularization parameters
+gamma <- 0.01
+delta <- 0.01
 
 test_that( 'rmsd_Q works', {
     expect_silent(
@@ -64,48 +69,57 @@ test_that( 'Theta_square_root works', {
     expect_equal( Theta_redone, Theta )
 })
 
+# now that the above function was validated, use it to calculate square root
+ThetaSR <- Theta_square_root( Theta, K )
+
 test_that( 'Objective works', {
     # in this test match is exact, so objective should be zero
-    PsiSR <- sqrt( Psi )
+    # (but only if penalties are zero too!)
+    L <- sqrt( Psi )
+    # need true rotation too...
+    R <- solve( L ) %*% MASS::ginv( Q ) %*% ThetaSR
     expect_silent( 
-        f <- Objective( Theta, Q, PsiSR, n, K )
+        f <- Objective( ThetaSR, Q, L, R, gamma = 0, delta = 0 )
     )
-    expect_equal( f, 0 )
+    expect_equal( f, rep.int( 0, 4L ) )
 
     # now try an inexact match
-    PsiSR <- diag( 1, K )
+    L <- diag( 1, K )
+    R <- diag( 1, K )
     # passed Q2 instead of Q here too, so it's totally random
     expect_silent( 
-        f <- Objective( Theta, Q2, PsiSR, n, K )
+        f <- Objective( ThetaSR, Q2, L, R, gamma, delta )
     )
     expect_true( is.numeric( f ) )
-    expect_equal( length( f ), 1L )
-    expect_true( f >= 0 )
-    expect_true( f <= 1 ) # holds because of the way it's normalized
+    expect_equal( length( f ), 4L )
+    expect_true( min( f ) >= 0 )
+    expect_true( f[2L] <= n*K ) # unnormalized has this max assuming all values are between 0-1 (not strictly true for linearized objective, because of rotation, but let's see...)
+    expect_equal( f[1L], sum( f[2L:4L] ) ) # first is sum of the rest
 })
 
 test_that( 'Initialize works', {
     expect_silent(
-        obj <- Initialize( Theta, K, n )
+        obj <- Initialize( Theta, ThetaSR, K, n, gamma, delta )
     )
     expect_true( is.list( obj ) )
-    expect_equal( names( obj ), c('Q', 'PsiSR', 'R', 'f') )
+    expect_equal( names( obj ), c('Q', 'L', 'R', 'f') )
     expect_true( is.matrix( obj$Q ) )
     expect_equal( nrow( obj$Q ), n )
     expect_equal( ncol( obj$Q ), K )
     expect_true( min( obj$Q ) >= 0 )
     expect_equal( rowSums( obj$Q ), rep.int( 1, n ) )
-    # current initialization results in fixed matrices for PsiSR and R, but better to test for any broadly appropriate values
-    expect_true( is.matrix( obj$PsiSR ) )
-    expect_equal( nrow( obj$PsiSR ), K )
-    expect_equal( ncol( obj$PsiSR ), K )
+    # current initialization results in fixed matrices for L and R, but better to test for any broadly appropriate values
+    expect_true( is.matrix( obj$L ) )
+    expect_equal( nrow( obj$L ), K )
+    expect_equal( ncol( obj$L ), K )
     expect_true( is.matrix( obj$R ) )
     expect_equal( nrow( obj$R ), K )
     expect_equal( ncol( obj$R ), K )
     expect_true( is.numeric( obj$f ) )
-    expect_equal( length( obj$f ), 1L )
-    expect_true( obj$f >= 0 )
-    expect_true( obj$f <= 1 ) # holds because of the way it's normalized
+    expect_equal( length( obj$f ), 4L )
+    expect_true( min( obj$f ) >= 0 )
+    expect_true( obj$f[2L] <= n*K ) # unnormalized has this max assuming all values are between 0-1
+    expect_equal( obj$f[1L], sum( obj$f[2L:4L] ) ) # first is sum of the rest
 })
 
 test_that( 'projsplx works', {
@@ -137,12 +151,13 @@ test_that( 'admixcor works', {
     # for this test, we don't have to fully converge (even in toy data it sometimes takes too long)
     # this stops in a single iteration in tests!
     stop <- 1e-2 # default 1e-15
+    # first test default regularized version
     expect_silent(
         obj <- admixcor( Theta, K, stop = stop )
     )
     ## obj <- admixcor( Theta, K, stop = stop, verbose = TRUE ) # for testing
     expect_true( is.list( obj ) )
-    expect_equal( names( obj ), c('Q', 'Psi') )
+    expect_equal( names( obj ), c('Q', 'Psi', 'f', 'report') )
     expect_true( is.matrix( obj$Q ) )
     expect_equal( nrow( obj$Q ), n )
     expect_equal( ncol( obj$Q ), K )
@@ -153,4 +168,32 @@ test_that( 'admixcor works', {
     expect_equal( ncol( obj$Psi ), K )
     expect_true( min( obj$Psi ) >= 0 )
     # expect_true( max( obj$Psi ) <= 1 ) # current algorithm doesn't enforce this
+    expect_true( is.numeric( obj$f ) )
+    expect_equal( length( obj$f ), 1L )
+    expect_true( obj$f >= 0 )
+    expect_true( obj$f <= n*K ) # unnormalized has this max assuming all values are between 0-1
+    expect_true( is_tibble( obj$report ) ) # undetailed validation here...
+    
+    # now test no regularization version, where some things may be singular if we're not careful
+    expect_silent(
+        obj <- admixcor( Theta, K, stop = stop, gamma = 0 )
+    )
+    ## obj <- admixcor( Theta, K, stop = stop, verbose = TRUE ) # for testing
+    expect_true( is.list( obj ) )
+    expect_equal( names( obj ), c('Q', 'Psi', 'f', 'report') )
+    expect_true( is.matrix( obj$Q ) )
+    expect_equal( nrow( obj$Q ), n )
+    expect_equal( ncol( obj$Q ), K )
+    expect_true( min( obj$Q ) >= 0 )
+    expect_equal( rowSums( obj$Q ), rep.int( 1, n ) )
+    expect_true( is.matrix( obj$Psi ) )
+    expect_equal( nrow( obj$Psi ), K )
+    expect_equal( ncol( obj$Psi ), K )
+    expect_true( min( obj$Psi ) >= 0 )
+    # expect_true( max( obj$Psi ) <= 1 ) # current algorithm doesn't enforce this
+    expect_true( is.numeric( obj$f ) )
+    expect_equal( length( obj$f ), 1L )
+    expect_true( obj$f >= 0 )
+    expect_true( obj$f <= n*K ) # unnormalized has this max assuming all values are between 0-1
+    expect_true( is_tibble( obj$report ) ) # undetailed validation here...
 })

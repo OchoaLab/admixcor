@@ -1,35 +1,57 @@
+# set a seed for reproducible replicates
+set.seed(1)
+
+library(genio)
+library(tibble)
+
 source('../R/Theta_square_root.R')
 source('../R/Objective.R')
 source('../R/Initialize.R')
 source('../R/projsplx.R')
 source('../R/admixcor.R')
-#source('align_Q.R')
+source('../R/align_Q.R')
 
 args = commandArgs(trailingOnly=TRUE);
-if(length(args) !=2 )
-    stop("Rscript AdmixCor kinship.txt(tab delimited file) K(number of populations)\n")
+if ( length(args) != 6 )
+    stop("Rscript admixcor.R <coancestry> <K> <gamma> <delta> <Q_true> <Psi_true>\n")
 
-coances=args[1]
-K=as.numeric(args[2])
+coancestry_file <- args[1]
+K <- as.numeric( args[2] )
+gamma <- as.numeric( args[3] )
+delta <- as.numeric( args[4] )
+Q_true_file <- args[5]
+Psi_true_file <- args[6]
 
-Theta<-as.matrix(read.table(coances, header = FALSE, sep = "\t")) #coancestry matrix
-#Qin<-as.matrix(read.table(args[3], header = FALSE, sep = "\t")) #admixture matrix
-#Psiin<-as.matrix(read.table(args[4], header = FALSE, sep = "\t")) #Psi matrix
+# load data to process
+Theta <- read_matrix( coancestry_file ) # coancestry matrix
+Q_true <- read_matrix( Q_true_file ) # admixture matrix
+Psi_true <- read_matrix( Psi_true_file ) # Psi matrix
 
 # main run!
-obj <- admixcor( Theta, K, verbose = TRUE )
+obj <- admixcor( Theta, K, gamma = gamma, delta = delta )
+Q_est <- obj$Q
+Psi_est <- obj$Psi
 
+# print report!
+print( obj$report )
 
-## indexes <- align_Q( Qin, Qfinal )
-## # permute
-## Qfinal <- Qfinal[ , indexes ]
-## Psifinal <- Psifinal[ indexes, indexes ]
-## # Q error
-## err <- rmsd_Q( Qin, Qfinal )
-## # P error
-## Ptemp<-Psifinal
-## Pin2<-Psiin
-## Ptemp[lower.tri(Ptemp)] <- 0
-## Pin2[lower.tri(Pin2)] <- 0
+# for final error assessment, align results to true matrices
+indexes <- align_Q( Q_true, Q_est )
+# permute
+Q_est <- Q_est[ , indexes ]
+Psi_est <- Psi_est[ indexes, indexes ]
+# Q error
+err_Q <- rmsd_Q( Q_true, Q_est )
+# P error
+Ptemp<-Psi_est
+Pin2<-Psi_true
+Ptemp[lower.tri(Ptemp)] <- 0
+Pin2[lower.tri(Pin2)] <- 0
+err_Psi <- norm((Pin2-Ptemp),"F")*sqrt(2/(K*(K+1)))
 
-## message(err,' ',norm((Pin2-Ptemp),"F")*sqrt(2/(K*(K+1))),' ',minf,' ',ptm[3])
+# report errors!
+errors <- tibble(
+    err_Q = err_Q,
+    err_Psi = err_Psi
+)
+print( errors )
