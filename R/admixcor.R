@@ -1,13 +1,12 @@
-admixcor <- function( Theta, K, stop = 1e-15 ) {
+admixcor <- function( Theta, K, gamma = 0.01, stop = 1e-15, verbose = FALSE ) {
     n<-nrow(Theta)
     normz<-norm(Theta,"F")
 
     ThetaSR<-Theta_square_root(Theta,K)
-    Vars<-Initialize(Theta,ThetaSR,K,n)
+    Vars<-Initialize(Theta,K,n)
 
     I<-diag(1,K,K)
-    gamma<-0.00
-
+    
     ndQ<-100
     ndPsiSR<-100
     ndR<-100
@@ -21,21 +20,21 @@ admixcor <- function( Theta, K, stop = 1e-15 ) {
     nstep<-0
     while(ndQ>stop && ndPsiSR>stop && ndR>stop)
     {
-	Qinv<-ginv(Q0)
-	R1<-ginv(PsiSR0)%*%Qinv%*%ThetaSR
+	Qinv<-MASS::ginv(Q0)
+	R1<-MASS::ginv(PsiSR0)%*%Qinv%*%ThetaSR
 	svd<-svd(R1)
         u<-svd$u
         v<-svd$v
         R1<-u%*%t(v)
 
 	QT<-t(Q0)
-	PsiSR1<-ginv(QT%*%Q0+gamma*I)%*%QT%*%ThetaSR%*%t(R1)
-	#PsiSR1<-ginv(Q1)%*%ThetaSR%*%t(R1)
+	PsiSR1<-MASS::ginv(QT%*%Q0+gamma*I)%*%QT%*%ThetaSR%*%t(R1)
+	#PsiSR1<-MASS::ginv(Q1)%*%ThetaSR%*%t(R1)
 	PsiSR1[lower.tri(PsiSR1)] <- 0
 	PsiSR1[PsiSR1<0]<-0
 	PsiSR1[PsiSR1>1]<-1
 	
-	Q1<-ThetaSR%*%t(R1)%*%ginv(PsiSR1)
+	Q1<-ThetaSR%*%t(R1)%*%MASS::ginv(PsiSR1)
 	for(j in 1:n){
             #Q1[j,]=ifelse(Q1[j,]<0.0,Q1[j,]-min(Q1[j,])+0.0001,Q1[j,])
             Q1[j,]<-projsplx(Q1[j,])
@@ -54,7 +53,8 @@ admixcor <- function( Theta, K, stop = 1e-15 ) {
 
 	if(nstep%%1000==0) 
 	{
-            message(ndQ,' ',ndPsiSR,' ',ndR,' ',f1)
+            if (verbose)
+                message(ndQ,' ',ndPsiSR,' ',ndR,' ',f1)
             #print(Q0)
             #print(PsiSR0)
 	}

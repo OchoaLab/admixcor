@@ -1,4 +1,7 @@
-Initialize<-function(Theta,ThetaSR,k,n)
+# initializes Q using kmeans on Theta
+# PsiSR initialized to fixed matrix of 1/k's upper triangular
+# R is initialized to I
+Initialize<-function(Theta,k,n)
 {
 	#Q<-matrix(runif(n*k),ncol=k,nrow=n)
 	#Q<-Q/rowSums(Q)
@@ -21,13 +24,13 @@ Initialize<-function(Theta,ThetaSR,k,n)
 
 	#PsiSR<-diag(runif(k),k,k)
 	#PsiSR<-matrix(runif(k*k),k,k)
-	PsiSR<-matrix(1,k,k)
+	PsiSR<-matrix(1/k,k,k) # make sure final Psi values don't exceed 1
 	#PsiSR<-diag(1,k,k)
 	PsiSR[lower.tri(PsiSR)] <- 0
 	
 	R<-diag(1,k,k)
 
-	f<-Objective(Theta,Q,PsiSR,n,K)
+	f<-Objective(Theta,Q,PsiSR,n,k)
 
 	result<-list(Q=Q,PsiSR=PsiSR,R=R,f=f)
 

@@ -1,4 +1,5 @@
-
+# uses EVD to calculate a matrix square root
+# it is truncated to the top K dimensions, so it's not an exact square root
 Theta_square_root<-function(Theta,K)
 {
 	ev<-eigen(Theta)
