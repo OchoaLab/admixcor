@@ -7,7 +7,7 @@ Initialize<-function(Theta,k,n)
 	#Q<-Q/rowSums(Q)
 
 	Q<-matrix(0,nrow=n,ncol=k)
-        fit<-kmeans(Theta,k,nstart=100,iter.max=100)
+        fit<-stats::kmeans(Theta,k,nstart=100,iter.max=100)
         for(x in 1:n){
 	        for(y in 1:k){
 		        if(fit$cluster[x]==y) {

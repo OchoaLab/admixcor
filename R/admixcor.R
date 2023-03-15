@@ -17,6 +17,9 @@ admixcor <- function( Theta, K, gamma = 0.01, stop = 1e-15, verbose = FALSE ) {
     f0<-Vars[[4]]
     minf<-100
 
+    if (verbose)
+        message("ndQ\tndPsiSR\tndR\tObjective")
+    
     nstep<-0
     while(ndQ>stop && ndPsiSR>stop && ndR>stop)
     {
@@ -54,7 +57,7 @@ admixcor <- function( Theta, K, gamma = 0.01, stop = 1e-15, verbose = FALSE ) {
 	if(nstep%%1000==0) 
 	{
             if (verbose)
-                message(ndQ,' ',ndPsiSR,' ',ndR,' ',f1)
+                message(ndQ,"\t",ndPsiSR,"\t",ndR,"\t",f1)
             #print(Q0)
             #print(PsiSR0)
 	}
