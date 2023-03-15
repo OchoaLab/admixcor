@@ -19,11 +19,13 @@ admixcor <- function(
     #message( 'normz: ', normz )
     
     # initialize other variables
-    Vars <- Initialize( Theta, ThetaSR, K, n, gamma, delta )
+    Vars <- Initialize( Theta, K, n )
     Q0 <- Vars$Q
     L0 <- Vars$L
     R0 <- Vars$R
-    f0 <- Vars$f
+
+    # calculate objective of this initial (very bad) solution
+    f0 <- Objective( ThetaSR, Q0, L0, R0, gamma, delta )
 
     # constant used in regularized expressions
     I<-diag(1,K,K)

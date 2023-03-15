@@ -99,10 +99,10 @@ test_that( 'Objective works', {
 
 test_that( 'Initialize works', {
     expect_silent(
-        obj <- Initialize( Theta, ThetaSR, K, n, gamma, delta )
+        obj <- Initialize( Theta, K, n )
     )
     expect_true( is.list( obj ) )
-    expect_equal( names( obj ), c('Q', 'L', 'R', 'f') )
+    expect_equal( names( obj ), c('Q', 'L', 'R') )
     expect_true( is.matrix( obj$Q ) )
     expect_equal( nrow( obj$Q ), n )
     expect_equal( ncol( obj$Q ), K )
@@ -115,11 +115,6 @@ test_that( 'Initialize works', {
     expect_true( is.matrix( obj$R ) )
     expect_equal( nrow( obj$R ), K )
     expect_equal( ncol( obj$R ), K )
-    expect_true( is.numeric( obj$f ) )
-    expect_equal( length( obj$f ), 4L )
-    expect_true( min( obj$f ) >= 0 )
-    expect_true( obj$f[2L] <= n*K ) # unnormalized has this max assuming all values are between 0-1
-    expect_equal( obj$f[1L], sum( obj$f[2L:4L] ) ) # first is sum of the rest
 })
 
 test_that( 'projsplx works', {

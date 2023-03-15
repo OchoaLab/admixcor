@@ -1,7 +1,7 @@
 # initializes Q using kmeans on Theta
 # L initialized to fixed matrix of 1/k's upper triangular
 # R is initialized to I
-Initialize<-function( Theta, ThetaSR, K, n, gamma, delta ) {
+Initialize<-function( Theta, K, n ) {
     # initialize Q randomly
     #Q<-matrix(runif(n*k),ncol=k,nrow=n)
     #Q<-Q/rowSums(Q)
@@ -27,16 +27,12 @@ Initialize<-function( Theta, ThetaSR, K, n, gamma, delta ) {
     # initialize R to identity matrix
     R <- diag( 1, K, K )
 
-    # calculate objective of this initial (very bad) solution
-    f <- Objective( ThetaSR, Q, L, R, gamma, delta )
-
     # return everything!
     return(
         list(
             Q = Q,
             L = L,
-            R = R,
-            f = f
+            R = R
         )
     )
 }
