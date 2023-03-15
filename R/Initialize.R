@@ -1,5 +1,3 @@
-library(randtoolbox)
-
 Initialize<-function(Theta,ThetaSR,k,n)
 {
 	#Q<-matrix(runif(n*k),ncol=k,nrow=n)
