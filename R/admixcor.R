@@ -10,13 +10,10 @@ admixcor <- function(
     n<-nrow(Theta)
 
     # decompose Theta for "linear" objective
-    ThetaSR<-Theta_square_root(Theta,K)
-    # normalization factor that puts penalty terms in equal footing
-    normz <- norm( ThetaSR, "F" )^2
-    # apply to parameters
-    gamma <- gamma * normz
-    delta <- delta * normz
-    #message( 'normz: ', normz )
+    ThetaSR <- Theta_square_root( Theta, K )
+    # normalize gamma to be on a more similar scale to delta, etc
+    # takes into account that dim(L) = (K, K) is much smaller than dim(Q) = dim(ThetaSR) = (n, K)
+    gamma <- gamma * n / K
     
     # initialize other variables
     Vars <- Initialize( Theta, K, n )
