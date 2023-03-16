@@ -31,10 +31,10 @@ admixcor <- function(
     I<-diag(1,K,K)
 
     # initialize gradient norms to ensure first iteration occurs
-    ndQ<-100
-    ndL<-100
-    ndR<-100
-    f_best <- 100
+    ndQ <- Inf
+    ndL <- Inf
+    ndR <- Inf
+    f_best <- Inf
 
     # initialize counter
     nstep<-0
@@ -99,7 +99,7 @@ admixcor <- function(
 	nstep<-nstep+1
 	if (nstep>nstep_max) break
     }
-    
+
     # report final iteration info
     # nstep-1 because we incremented without a change in last case (and it starts from zero because we don't want to change things)
     # increment report
