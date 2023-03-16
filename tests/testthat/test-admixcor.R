@@ -191,4 +191,50 @@ test_that( 'admixcor works', {
     expect_true( obj$f >= 0 )
     expect_true( obj$f <= n*K ) # unnormalized has this max assuming all values are between 0-1
     expect_true( is_tibble( obj$report ) ) # undetailed validation here...
+
+    # now test no regularization version, where some things may be singular if we're not careful
+    expect_silent(
+        obj <- admixcor( Theta, K, tol = tol, delta = 0 )
+    )
+    ## obj <- admixcor( Theta, K, tol = tol, verbose = TRUE ) # for testing
+    expect_true( is.list( obj ) )
+    expect_equal( names( obj ), c('Q', 'Psi', 'f', 'report') )
+    expect_true( is.matrix( obj$Q ) )
+    expect_equal( nrow( obj$Q ), n )
+    expect_equal( ncol( obj$Q ), K )
+    expect_true( min( obj$Q ) >= 0 )
+    expect_equal( rowSums( obj$Q ), rep.int( 1, n ) )
+    expect_true( is.matrix( obj$Psi ) )
+    expect_equal( nrow( obj$Psi ), K )
+    expect_equal( ncol( obj$Psi ), K )
+    expect_true( min( obj$Psi ) >= 0 )
+    # expect_true( max( obj$Psi ) <= 1 ) # current algorithm doesn't enforce this
+    expect_true( is.numeric( obj$f ) )
+    expect_equal( length( obj$f ), 1L )
+    expect_true( obj$f >= 0 )
+    expect_true( obj$f <= n*K ) # unnormalized has this max assuming all values are between 0-1
+    expect_true( is_tibble( obj$report ) ) # undetailed validation here...
+
+    # now test no regularization version, where some things may be singular if we're not careful
+    expect_silent(
+        obj <- admixcor( Theta, K, tol = tol, gamma = 0, delta = 0 )
+    )
+    ## obj <- admixcor( Theta, K, tol = tol, verbose = TRUE ) # for testing
+    expect_true( is.list( obj ) )
+    expect_equal( names( obj ), c('Q', 'Psi', 'f', 'report') )
+    expect_true( is.matrix( obj$Q ) )
+    expect_equal( nrow( obj$Q ), n )
+    expect_equal( ncol( obj$Q ), K )
+    expect_true( min( obj$Q ) >= 0 )
+    expect_equal( rowSums( obj$Q ), rep.int( 1, n ) )
+    expect_true( is.matrix( obj$Psi ) )
+    expect_equal( nrow( obj$Psi ), K )
+    expect_equal( ncol( obj$Psi ), K )
+    expect_true( min( obj$Psi ) >= 0 )
+    # expect_true( max( obj$Psi ) <= 1 ) # current algorithm doesn't enforce this
+    expect_true( is.numeric( obj$f ) )
+    expect_equal( length( obj$f ), 1L )
+    expect_true( obj$f >= 0 )
+    expect_true( obj$f <= n*K ) # unnormalized has this max assuming all values are between 0-1
+    expect_true( is_tibble( obj$report ) ) # undetailed validation here...
 })
