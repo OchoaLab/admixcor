@@ -23,7 +23,7 @@ admixcor <- function(
     gamma <- gamma * n / K
     
     # initialize other variables
-    Vars <- Initialize( Theta, K, n, Q_type, L_type )
+    Vars <- Initialize( ThetaSR, K, n, Q_type, L_type )
     Q0 <- Vars$Q
     L0 <- Vars$L
     R0 <- Vars$R
