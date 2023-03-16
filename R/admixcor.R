@@ -32,16 +32,21 @@ admixcor <- function(
     f_best <- Inf
 
     # initialize counter
-    nstep<-0
+    nstep <- 0
 
     # initialize select values to save for report
     # values of starting point
-    nsteps <- -1
+    nsteps <- nstep
     ndQs <- NA
     objs <- f0
     dobjs <- NA
 
-    while ( ndQ > tol ) { # && ndL > tol && ndR > tol ) {
+    while ( ndQ > tol ) {
+        # increment counter, break if needed
+        nstep <- nstep + 1
+	if ( nstep > nstep_max )
+            break
+        
         # apply the updates, one at the time
         R1 <- update_R( ThetaSR, Q0, L0 )
         L1 <- update_L( ThetaSR, Q0, R1, gamma, I )
@@ -81,14 +86,10 @@ admixcor <- function(
             ndQ_best <- ndQ
             df_best <- df
 	}
-	nstep<-nstep+1
-	if (nstep>nstep_max) break
     }
 
     # report final iteration info
-    # nstep-1 because we incremented without a change in last case (and it starts from zero because we don't want to change things)
-    # increment report
-    nsteps <- c( nsteps, nstep-1 )
+    nsteps <- c( nsteps, nstep )
     ndQs <- c( ndQs, ndQ )
     objs <- rbind( objs, f0 ) # this is a matrix!
     dobjs <- c( dobjs, df )
