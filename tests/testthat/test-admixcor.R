@@ -145,12 +145,12 @@ test_that( 'projsplx works', {
 test_that( 'admixcor works', {
     # for this test, we don't have to fully converge (even in toy data it sometimes takes too long)
     # this stops in a single iteration in tests!
-    stop <- 1e-2 # default 1e-15
+    tol <- 1e-2 # default ~1e-8
     # first test default regularized version
     expect_silent(
-        obj <- admixcor( Theta, K, stop = stop )
+        obj <- admixcor( Theta, K, tol = tol )
     )
-    ## obj <- admixcor( Theta, K, stop = stop, verbose = TRUE ) # for testing
+    ## obj <- admixcor( Theta, K, tol = tol, verbose = TRUE ) # for testing
     expect_true( is.list( obj ) )
     expect_equal( names( obj ), c('Q', 'Psi', 'f', 'report') )
     expect_true( is.matrix( obj$Q ) )
@@ -171,9 +171,9 @@ test_that( 'admixcor works', {
     
     # now test no regularization version, where some things may be singular if we're not careful
     expect_silent(
-        obj <- admixcor( Theta, K, stop = stop, gamma = 0 )
+        obj <- admixcor( Theta, K, tol = tol, gamma = 0 )
     )
-    ## obj <- admixcor( Theta, K, stop = stop, verbose = TRUE ) # for testing
+    ## obj <- admixcor( Theta, K, tol = tol, verbose = TRUE ) # for testing
     expect_true( is.list( obj ) )
     expect_equal( names( obj ), c('Q', 'Psi', 'f', 'report') )
     expect_true( is.matrix( obj$Q ) )
