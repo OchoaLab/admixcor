@@ -3,11 +3,18 @@ admixcor <- function(
                      K,
                      gamma = 0.01,
                      delta = 0.01,
+                     Q_type = c('kmeans', 'random', 'uniform'),
+                     L_type = c('identity', 'uniform', 'diagrandom', 'random'),
                      tol = sqrt( .Machine$double.eps ), # 1e-15
                      nstep_max = 100000,
                      report_freq = 1000
                      ) {
-    n<-nrow(Theta)
+    # process options
+    Q_type <- match.arg( Q_type )
+    L_type <- match.arg( L_type )
+
+    # number of individuals is dimensions of Theta
+    n <- nrow( Theta )
 
     # decompose Theta for "linear" objective
     ThetaSR <- Theta_square_root( Theta, K )
@@ -16,7 +23,7 @@ admixcor <- function(
     gamma <- gamma * n / K
     
     # initialize other variables
-    Vars <- Initialize( Theta, K, n )
+    Vars <- Initialize( Theta, K, n, Q_type, L_type )
     Q0 <- Vars$Q
     L0 <- Vars$L
     R0 <- Vars$R
@@ -25,8 +32,8 @@ admixcor <- function(
     f0 <- Objective( ThetaSR, Q0, L0, R0, gamma, delta )
 
     # constant used in regularized expressions
-    I<-diag(1,K,K)
-
+    I <- diag( 1, K, K )
+    
     # initialize gradient norms to ensure first iteration occurs
     ndQ <- Inf
     f_best <- Inf
@@ -78,9 +85,9 @@ admixcor <- function(
 
         # decide if this is better than previous best, based on total objective (including penalties)
 	if ( f_best[1L] > f0[1L] ) {
-            f_best<-f0
-            Q_best<-Q0
-            L_best<-L0
+            f_best <- f0
+            Q_best <- Q0
+            L_best <- L0
             # nice extra info, mostly for troubleshooting
             nstep_best <- nstep
             ndQ_best <- ndQ

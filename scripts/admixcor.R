@@ -13,8 +13,8 @@ invisible( sapply( files, source, .GlobalEnv ) )
 ############
 
 args <- commandArgs(trailingOnly = TRUE);
-if ( length(args) != 6 )
-    stop("Rscript admixcor.R <coancestry> <K> <gamma> <delta> <Q_true> <Psi_true>\n")
+if ( length(args) != 8 )
+    stop("Rscript admixcor.R <coancestry> <K> <gamma> <delta> <Q_true> <Psi_true> <Q_type> <L_type>\n")
 
 coancestry_file <- args[1]
 K <- as.numeric( args[2] )
@@ -22,6 +22,8 @@ gamma <- as.numeric( args[3] )
 delta <- as.numeric( args[4] )
 Q_true_file <- args[5]
 Psi_true_file <- args[6]
+Q_type <- args[7]
+L_type <- args[8]
 
 ###########
 ### RUN ###
@@ -33,7 +35,7 @@ Q_true <- read_matrix( Q_true_file ) # admixture matrix
 Psi_true <- read_matrix( Psi_true_file ) # Psi matrix
 
 # main run!
-obj <- admixcor( Theta, K, gamma = gamma, delta = delta )
+obj <- admixcor( Theta, K, gamma = gamma, delta = delta, Q_type = Q_type, L_type = L_type )
 Q_est <- obj$Q
 Psi_est <- obj$Psi
 

@@ -97,10 +97,9 @@ test_that( 'Objective works', {
     expect_equal( f[1L], sum( f[2L:4L] ) ) # first is sum of the rest
 })
 
-test_that( 'Initialize works', {
-    expect_silent(
-        obj <- Initialize( Theta, K, n )
-    )
+# uniform testing for all cases
+# uses globals n, K
+validate_initialize <- function( obj ) {
     expect_true( is.list( obj ) )
     expect_equal( names( obj ), c('Q', 'L', 'R') )
     expect_true( is.matrix( obj$Q ) )
@@ -108,13 +107,46 @@ test_that( 'Initialize works', {
     expect_equal( ncol( obj$Q ), K )
     expect_true( min( obj$Q ) >= 0 )
     expect_equal( rowSums( obj$Q ), rep.int( 1, n ) )
-    # current initialization results in fixed matrices for L and R, but better to test for any broadly appropriate values
     expect_true( is.matrix( obj$L ) )
     expect_equal( nrow( obj$L ), K )
     expect_equal( ncol( obj$L ), K )
     expect_true( is.matrix( obj$R ) )
     expect_equal( nrow( obj$R ), K )
     expect_equal( ncol( obj$R ), K )
+}
+
+test_that( 'Initialize works', {
+    # test all Q_types!
+    expect_silent(
+        obj <- Initialize( Theta, K, n, Q_type = 'kmeans' )
+    )
+    validate_initialize( obj )
+    expect_silent(
+        obj <- Initialize( Theta, K, n, Q_type = 'random' )
+    )
+    validate_initialize( obj )
+    expect_silent(
+        obj <- Initialize( Theta, K, n, Q_type = 'uniform' )
+    )
+    validate_initialize( obj )
+
+    # test all L_types!
+    expect_silent(
+        obj <- Initialize( Theta, K, n, L_type = 'identity' )
+    )
+    validate_initialize( obj )
+    expect_silent(
+        obj <- Initialize( Theta, K, n, L_type = 'uniform' )
+    )
+    validate_initialize( obj )
+    expect_silent(
+        obj <- Initialize( Theta, K, n, L_type = 'diagrandom' )
+    )
+    validate_initialize( obj )
+    expect_silent(
+        obj <- Initialize( Theta, K, n, L_type = 'random' )
+    )
+    validate_initialize( obj )
 })
 
 test_that( 'projsplx works', {
@@ -142,6 +174,28 @@ test_that( 'projsplx works', {
     expect_equal( rowSums( Q3 ), rep.int( 1, n ) )
 })
 
+# uniform testing for all cases
+# uses globals n, K
+validate_admixcor <- function( obj ) {
+    expect_true( is.list( obj ) )
+    expect_equal( names( obj ), c('Q', 'Psi', 'f', 'report') )
+    expect_true( is.matrix( obj$Q ) )
+    expect_equal( nrow( obj$Q ), n )
+    expect_equal( ncol( obj$Q ), K )
+    expect_true( min( obj$Q ) >= 0 )
+    expect_equal( rowSums( obj$Q ), rep.int( 1, n ) )
+    expect_true( is.matrix( obj$Psi ) )
+    expect_equal( nrow( obj$Psi ), K )
+    expect_equal( ncol( obj$Psi ), K )
+    expect_true( min( obj$Psi ) >= 0 )
+    # expect_true( max( obj$Psi ) <= 1 ) # current algorithm doesn't enforce this
+    expect_true( is.numeric( obj$f ) )
+    expect_equal( length( obj$f ), 1L )
+    expect_true( obj$f >= 0 )
+    expect_true( obj$f <= n*K ) # unnormalized has this max assuming all values are between 0-1
+    expect_true( is_tibble( obj$report ) ) # undetailed validation here...
+}
+
 test_that( 'admixcor works', {
     # for this test, we don't have to fully converge (even in toy data it sometimes takes too long)
     # this stops in a single iteration in tests!
@@ -151,90 +205,58 @@ test_that( 'admixcor works', {
         obj <- admixcor( Theta, K, tol = tol )
     )
     ## obj <- admixcor( Theta, K, tol = tol, verbose = TRUE ) # for testing
-    expect_true( is.list( obj ) )
-    expect_equal( names( obj ), c('Q', 'Psi', 'f', 'report') )
-    expect_true( is.matrix( obj$Q ) )
-    expect_equal( nrow( obj$Q ), n )
-    expect_equal( ncol( obj$Q ), K )
-    expect_true( min( obj$Q ) >= 0 )
-    expect_equal( rowSums( obj$Q ), rep.int( 1, n ) )
-    expect_true( is.matrix( obj$Psi ) )
-    expect_equal( nrow( obj$Psi ), K )
-    expect_equal( ncol( obj$Psi ), K )
-    expect_true( min( obj$Psi ) >= 0 )
-    # expect_true( max( obj$Psi ) <= 1 ) # current algorithm doesn't enforce this
-    expect_true( is.numeric( obj$f ) )
-    expect_equal( length( obj$f ), 1L )
-    expect_true( obj$f >= 0 )
-    expect_true( obj$f <= n*K ) # unnormalized has this max assuming all values are between 0-1
-    expect_true( is_tibble( obj$report ) ) # undetailed validation here...
+    validate_admixcor( obj )
     
     # now test no regularization version, where some things may be singular if we're not careful
     expect_silent(
         obj <- admixcor( Theta, K, tol = tol, gamma = 0 )
     )
-    ## obj <- admixcor( Theta, K, tol = tol, verbose = TRUE ) # for testing
-    expect_true( is.list( obj ) )
-    expect_equal( names( obj ), c('Q', 'Psi', 'f', 'report') )
-    expect_true( is.matrix( obj$Q ) )
-    expect_equal( nrow( obj$Q ), n )
-    expect_equal( ncol( obj$Q ), K )
-    expect_true( min( obj$Q ) >= 0 )
-    expect_equal( rowSums( obj$Q ), rep.int( 1, n ) )
-    expect_true( is.matrix( obj$Psi ) )
-    expect_equal( nrow( obj$Psi ), K )
-    expect_equal( ncol( obj$Psi ), K )
-    expect_true( min( obj$Psi ) >= 0 )
-    # expect_true( max( obj$Psi ) <= 1 ) # current algorithm doesn't enforce this
-    expect_true( is.numeric( obj$f ) )
-    expect_equal( length( obj$f ), 1L )
-    expect_true( obj$f >= 0 )
-    expect_true( obj$f <= n*K ) # unnormalized has this max assuming all values are between 0-1
-    expect_true( is_tibble( obj$report ) ) # undetailed validation here...
+    validate_admixcor( obj )
 
     # now test no regularization version, where some things may be singular if we're not careful
     expect_silent(
         obj <- admixcor( Theta, K, tol = tol, delta = 0 )
     )
-    ## obj <- admixcor( Theta, K, tol = tol, verbose = TRUE ) # for testing
-    expect_true( is.list( obj ) )
-    expect_equal( names( obj ), c('Q', 'Psi', 'f', 'report') )
-    expect_true( is.matrix( obj$Q ) )
-    expect_equal( nrow( obj$Q ), n )
-    expect_equal( ncol( obj$Q ), K )
-    expect_true( min( obj$Q ) >= 0 )
-    expect_equal( rowSums( obj$Q ), rep.int( 1, n ) )
-    expect_true( is.matrix( obj$Psi ) )
-    expect_equal( nrow( obj$Psi ), K )
-    expect_equal( ncol( obj$Psi ), K )
-    expect_true( min( obj$Psi ) >= 0 )
-    # expect_true( max( obj$Psi ) <= 1 ) # current algorithm doesn't enforce this
-    expect_true( is.numeric( obj$f ) )
-    expect_equal( length( obj$f ), 1L )
-    expect_true( obj$f >= 0 )
-    expect_true( obj$f <= n*K ) # unnormalized has this max assuming all values are between 0-1
-    expect_true( is_tibble( obj$report ) ) # undetailed validation here...
+    validate_admixcor( obj )
 
     # now test no regularization version, where some things may be singular if we're not careful
     expect_silent(
         obj <- admixcor( Theta, K, tol = tol, gamma = 0, delta = 0 )
     )
-    ## obj <- admixcor( Theta, K, tol = tol, verbose = TRUE ) # for testing
-    expect_true( is.list( obj ) )
-    expect_equal( names( obj ), c('Q', 'Psi', 'f', 'report') )
-    expect_true( is.matrix( obj$Q ) )
-    expect_equal( nrow( obj$Q ), n )
-    expect_equal( ncol( obj$Q ), K )
-    expect_true( min( obj$Q ) >= 0 )
-    expect_equal( rowSums( obj$Q ), rep.int( 1, n ) )
-    expect_true( is.matrix( obj$Psi ) )
-    expect_equal( nrow( obj$Psi ), K )
-    expect_equal( ncol( obj$Psi ), K )
-    expect_true( min( obj$Psi ) >= 0 )
-    # expect_true( max( obj$Psi ) <= 1 ) # current algorithm doesn't enforce this
-    expect_true( is.numeric( obj$f ) )
-    expect_equal( length( obj$f ), 1L )
-    expect_true( obj$f >= 0 )
-    expect_true( obj$f <= n*K ) # unnormalized has this max assuming all values are between 0-1
-    expect_true( is_tibble( obj$report ) ) # undetailed validation here...
+    validate_admixcor( obj )
+
+    # all of those earlier cases were default Q initialization using kmeans, try other non-default cases
+    # test default regularized version and totally unregularized, to catch edge cases potentially
+    expect_silent(
+        obj <- admixcor( Theta, K, tol = tol, Q_type = 'random' )
+    )
+    validate_admixcor( obj )
+    expect_silent(
+        obj <- admixcor( Theta, K, tol = tol, Q_type = 'random', gamma = 0, delta = 0 )
+    )
+    validate_admixcor( obj )
+    expect_silent(
+        obj <- admixcor( Theta, K, tol = tol, Q_type = 'uniform' )
+    )
+    validate_admixcor( obj )
+    expect_silent(
+        obj <- admixcor( Theta, K, tol = tol, Q_type = 'uniform', gamma = 0, delta = 0 )
+    )
+    validate_admixcor( obj )
+
+    # ditto L initializations, try non-default versions now (identity is default)
+    # test in context of Q_type = 'kmeans' only
+    # in this case didn't test unregularized edge cases, but meh, will do if there is a clear need later
+    expect_silent(
+        obj <- admixcor( Theta, K, tol = tol, L_type = 'uniform' )
+    )
+    validate_admixcor( obj )
+    expect_silent(
+        obj <- admixcor( Theta, K, tol = tol, L_type = 'diagrandom' )
+    )
+    validate_admixcor( obj )
+    expect_silent(
+        obj <- admixcor( Theta, K, tol = tol, L_type = 'random' )
+    )
+    validate_admixcor( obj )
 })
