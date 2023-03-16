@@ -29,8 +29,6 @@ admixcor <- function(
 
     # initialize gradient norms to ensure first iteration occurs
     ndQ <- Inf
-    ndL <- Inf
-    ndR <- Inf
     f_best <- Inf
 
     # initialize counter
@@ -40,21 +38,17 @@ admixcor <- function(
     # values of starting point
     nsteps <- -1
     ndQs <- NA
-    ndLs <- NA
-    ndRs <- NA
     objs <- f0
     dobjs <- NA
 
-    while ( ndQ > tol && ndL > tol && ndR > tol ) {
+    while ( ndQ > tol ) { # && ndL > tol && ndR > tol ) {
         # apply the updates, one at the time
         R1 <- update_R( ThetaSR, Q0, L0 )
         L1 <- update_L( ThetaSR, Q0, R1, gamma, I )
         Q1 <- update_Q( ThetaSR, L1, R1, delta, I )
         
         # calculate step sizes, to assess convergence
-	ndQ <- norm( Q0 - Q1, "F" )
-	ndL <- norm( L0 - L1, "F" )
-	ndR <- norm( R0 - R1, "F" )
+	ndQ <- norm( Q0 - Q1, "F" )^2
         
         # calculate new objective
 	f1 <- Objective( ThetaSR, Q1, L1, R1, gamma, delta )
@@ -73,12 +67,8 @@ admixcor <- function(
             # increment report
             nsteps <- c( nsteps, nstep )
             ndQs <- c( ndQs, ndQ )
-            ndLs <- c( ndLs, ndL )
-            ndRs <- c( ndRs, ndR )
             objs <- rbind( objs, f0 ) # this is a matrix!
             dobjs <- c( dobjs, df )
-            #print(Q0)
-            #print(L0)
 	}
 
         # decide if this is better than previous best, based on total objective (including penalties)
@@ -89,8 +79,6 @@ admixcor <- function(
             # nice extra info, mostly for troubleshooting
             nstep_best <- nstep
             ndQ_best <- ndQ
-            ndL_best <- ndL
-            ndR_best <- ndR
             df_best <- df
 	}
 	nstep<-nstep+1
@@ -102,23 +90,17 @@ admixcor <- function(
     # increment report
     nsteps <- c( nsteps, nstep-1 )
     ndQs <- c( ndQs, ndQ )
-    ndLs <- c( ndLs, ndL )
-    ndRs <- c( ndRs, ndR )
     objs <- rbind( objs, f0 ) # this is a matrix!
     dobjs <- c( dobjs, df )
     # compare data for best
     nsteps <- c( nsteps, nstep_best )
     ndQs <- c( ndQs, ndQ_best )
-    ndLs <- c( ndLs, ndL_best )
-    ndRs <- c( ndRs, ndR_best )
     objs <- rbind( objs, f_best ) # this is a matrix!
     dobjs <- c( dobjs, df_best )
     # finalize report
     report <- tibble::tibble(
                           nstep = nsteps,
                           dQ = ndQs,
-                          dL = ndLs,
-                          dR = ndRs,
                           # treat matrix cases accordingly, extracting columns as needed
                           obj = objs[,1L],
                           dobj = dobjs,
