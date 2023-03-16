@@ -52,9 +52,9 @@ admixcor <- function(
         Q1 <- update_Q( ThetaSR, L1, R1, delta, I )
         
         # calculate step sizes, to assess convergence
-	ndQ<-norm((Q0-Q1),"F")/sqrt(n*K)
-	ndL<-norm((L0-L1),"F")/K
-	ndR<-norm((R0-R1),"F")/K
+	ndQ <- norm( Q0 - Q1, "F" )
+	ndL <- norm( L0 - L1, "F" )
+	ndR <- norm( R0 - R1, "F" )
         
         # calculate new objective
 	f1 <- Objective( ThetaSR, Q1, L1, R1, gamma, delta )
@@ -63,10 +63,10 @@ admixcor <- function(
         df <- abs( f1[1L] - f0[1L] )
 
         # update variables for next iteration
-	Q0<-Q1
-	L0<-L1
-	R0<-R1
-	f0<-f1
+	Q0 <- Q1
+	L0 <- L1
+	R0 <- R1
+	f0 <- f1
 
         # update report infrequently
 	if ( nstep %% report_freq == 0) {
