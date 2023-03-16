@@ -49,32 +49,11 @@ admixcor <- function(
     dobjs <- NA
 
     while (ndQ>stop && ndL>stop && ndR>stop) {
-        # update R (rotation)
-	Qinv<-MASS::ginv(Q0)
-	R1<-MASS::ginv(L0) %*% Qinv %*% ThetaSR
-        # project updated R to rotation space
-        # simply replaces eigenvalues with ones
-	svd <- svd( R1 )
-        R1 <- tcrossprod( svd$u, svd$v )
-
-        # update L (square root of Psi)
-	L1<-tcrossprod( MASS::ginv( crossprod( Q0 ) + gamma*I) %*% crossprod( Q0, ThetaSR ), R1 ) # regularized L
-	#L1<-tcrossprod( MASS::ginv(Q1)%*%ThetaSR, R1 ) # unregularized L
-        # project L to non-negative Cholesky space
-	L1[lower.tri(L1)] <- 0
-	L1[L1<0]<-0
-	L1[L1>1]<-1
-
-        # update Q (admixture)
-	Q1 <- tcrossprod( ThetaSR, R1 ) %*% MASS::ginv(L1)
-        # project Q to simplex
-        Q1 <- t( apply( Q1, 1L, projsplx ) )
-        ## # old projection hack, did not perform as well
-	## for (j in 1:n) {
-        ##     Q1[j,]=ifelse(Q1[j,]<0.0,Q1[j,]-min(Q1[j,])+0.0001,Q1[j,])
-	## }
-	## Q1<-Q1/rowSums(Q1)
-
+        # apply the updates, one at the time
+        R1 <- update_R( ThetaSR, Q0, L0 )
+        L1 <- update_L( ThetaSR, Q0, R1, gamma, I )
+        Q1 <- update_Q( ThetaSR, L1, R1, delta, I )
+        
         # calculate step sizes, to assess convergence
 	ndQ<-norm((Q0-Q1),"F")/sqrt(n*K)
 	ndL<-norm((L0-L1),"F")/K
