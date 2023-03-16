@@ -1,4 +1,4 @@
-# initializes Q using kmeans on Theta
+# initializes Q using kmeans on Theta (will also work and is faster if ThetaSR is provided!)
 # L initialized to I
 # R is initialized to I
 
@@ -21,14 +21,12 @@ Initialize <- function(
     # initialize Q
     if ( Q_type == 'kmeans' ) {
         # initialize Q with k-means!
+        clusters <- stats::kmeans( Theta, K, nstart = 100, iter.max = 100 )
+        clusters <- clusters$cluster
+        # translate cluster vector to Q matrix
         Q <- matrix( 0, nrow = n, ncol = K )
-        fit <- stats::kmeans( Theta, K, nstart = 100, iter.max = 100 )
-        for ( x in 1L:n ) {
-            for ( y in 1L:K ) {
-                if ( fit$cluster[x] == y ) {
-                    Q[ x, y ] <- 1
-                }
-            }
+        for ( x in 1L : n ) {
+            Q[ x, clusters[x] ] <- 1
         }
     } else if ( Q_type == 'random' ) {
         # initialize Q randomly
