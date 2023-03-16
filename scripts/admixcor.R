@@ -4,16 +4,15 @@ set.seed(1)
 library(genio)
 library(tibble)
 
-source('../R/Theta_square_root.R')
-source('../R/Objective.R')
-source('../R/Initialize.R')
-source('../R/projsplx.R')
-source('../R/admixcor.R')
-source('../R/align_Q.R')
-source('../R/rmsd_Q_mat.R')
-source('../R/rmsd_Q.R')
+# load all latest source files
+files <- list.files( "../R", pattern = "*.R$", full.names = TRUE )
+invisible( sapply( files, source, .GlobalEnv ) )
 
-args = commandArgs(trailingOnly=TRUE);
+############
+### ARGS ###
+############
+
+args <- commandArgs(trailingOnly = TRUE);
 if ( length(args) != 6 )
     stop("Rscript admixcor.R <coancestry> <K> <gamma> <delta> <Q_true> <Psi_true>\n")
 
@@ -23,6 +22,10 @@ gamma <- as.numeric( args[3] )
 delta <- as.numeric( args[4] )
 Q_true_file <- args[5]
 Psi_true_file <- args[6]
+
+###########
+### RUN ###
+###########
 
 # load data to process
 Theta <- read_matrix( coancestry_file ) # coancestry matrix
@@ -36,6 +39,10 @@ Psi_est <- obj$Psi
 
 # print report!
 print( obj$report )
+
+############
+### EVAL ###
+############
 
 # for final error assessment, align results to true matrices
 indexes <- align_Q( Q_true, Q_est )
