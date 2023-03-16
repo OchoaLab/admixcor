@@ -1,6 +1,7 @@
 update_Q <- function( ThetaSR, L, R, delta, I ) {
     # update Q (admixture)
-    Q <- tcrossprod( ThetaSR, R ) %*% MASS::ginv( L )
+    # Q <- tcrossprod( ThetaSR, R ) %*% MASS::ginv( L ) # no Q regularization
+    Q <- tcrossprod( ThetaSR, L %*% R ) %*% MASS::ginv( tcrossprod( L ) + delta * I ) # regularized
     
     # project Q to simplex
     Q <- t( apply( Q, 1L, projsplx ) )
