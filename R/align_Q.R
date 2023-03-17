@@ -15,6 +15,8 @@
 #  8   2.397  0.391  0.490 0.028 (gap 0.0017038)
 #  9  22.929  3.579  4.511 0.028 (gap 0.0007097)
 # 10 229.040 36.267 46.199 0.029 (gap 0.0099809)
+
+#' @export
 align_Q <- function( Q, Q2, verbose = FALSE, fast = TRUE, fast2 = FALSE ) {
     # number of ancestral populations
     k <- ncol(Q)

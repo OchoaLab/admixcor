@@ -1,3 +1,4 @@
+#' @export
 admixcor <- function(
                      Theta,
                      K,

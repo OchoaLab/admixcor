@@ -1,6 +1,8 @@
 # computes root mean squared error between two admixture matrix
 # only validates dimensions
 # doesn't require Q's to be strictly valid (i.e. non-negative and have rows sum to 1), will return RMSDs in those cases too!
+
+#' @export
 rmsd_Q <- function( Q, Q2 ) {
     # validations
     if ( !is.matrix( Q ) )
