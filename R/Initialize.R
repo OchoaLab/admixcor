@@ -30,7 +30,7 @@ Initialize <- function(
         }
     } else if ( Q_type == 'random' ) {
         # initialize Q randomly
-        Q <- matrix( runif( n * K ), ncol = K, nrow = n )
+        Q <- matrix( stats::runif( n * K ), ncol = K, nrow = n )
         Q <- Q / rowSums( Q )
     } else if ( Q_type == 'uniform' ) {
         # start in the middle of the simplex for every individual
@@ -49,10 +49,10 @@ Initialize <- function(
     } else if ( L_type == 'identity' ) {
         L <- diag( 1, K, K )
     } else if ( L_type == 'diagrandom' ) {
-        L <- diag( runif( K ), K, K )
+        L <- diag( stats::runif( K ), K, K )
     } else if ( L_type == 'random' ) {
         # random values between 0 and 1/sqrt(K), ensure Psi is between 0 and 1
-        L <- matrix( runif( K^2 ), K, K ) / sqrt(K)
+        L <- matrix( stats::runif( K^2 ), K, K ) / sqrt(K)
         # ensure this is like cholesky
         L[ lower.tri( L ) ] <- 0
     } else
