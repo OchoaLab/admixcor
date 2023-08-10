@@ -254,6 +254,26 @@ test_that( 'update_L works', {
     # now try exact solution (true ThetaSR, Q and R), here it is recoverable in theory if we don't penalize!
     L2 <- update_L( ThetaSR, Q, R, 0, I )
     expect_equal( L2, L )
+
+    # test new version based on nnls, repeating both earlier tests
+    # here it's fine to exclude gamma and I
+    L2 <- update_L( ThetaSR, Q2, R, algorithm = 'nnls' )
+    validate_L( L2, K )
+    L2 <- update_L( ThetaSR, Q, R, algorithm = 'nnls' )
+    expect_equal( L2, L )
+
+    # ditto bvls
+    L2 <- update_L( ThetaSR, Q2, R, algorithm = 'bvls' )
+    validate_L( L2, K )
+    L2 <- update_L( ThetaSR, Q, R, algorithm = 'bvls' )
+    expect_equal( L2, L )
+    
+    # ditto glmnet
+    L2 <- update_L( ThetaSR, Q2, R, gamma, I, algorithm = 'glmnet' )
+    validate_L( L2, K )
+    # can only recover true solution if we don't penalize!
+    L2 <- update_L( ThetaSR, Q, R, 0, I, algorithm = 'glmnet' )
+    expect_equal( L2, L )
 })
 
 test_that( 'update_Q works', {
@@ -331,6 +351,20 @@ test_that( 'admixcor works', {
     validate_admixcor( obj, n, K )
     expect_silent(
         obj <- admixcor( Theta, K, tol = tol, L_type = 'random' )
+    )
+    validate_admixcor( obj, n, K )
+
+    # and L algorithms!
+    expect_silent(
+        obj <- admixcor( Theta, K, tol = tol, L_algorithm = 'nnls' )
+    )
+    validate_admixcor( obj, n, K )
+    expect_silent(
+        obj <- admixcor( Theta, K, tol = tol, L_algorithm = 'bvls' )
+    )
+    validate_admixcor( obj, n, K )
+    expect_silent(
+        obj <- admixcor( Theta, K, tol = tol, L_algorithm = 'glmnet' )
     )
     validate_admixcor( obj, n, K )
 })
