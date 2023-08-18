@@ -20,41 +20,61 @@ update_L <- function( ThetaSR, Q, R, gamma = 0, I = NULL, algorithm = c('origina
         # uses non-negative or bounded variable least squares, which are equivalent to our problem without regularization
         # solves exactly the requirement that the lower bound be zero, and exactly forces lower triangle to be zero during optimization, but does not set upper bound directly, we set strict cap of 1 as before
 
+
         # first set up the problem to resemble a linear regression for L
-        # L has to be flattened into a vector
-        # this is the value to solve for expressed as a vector, which is easy from matrix:
-        b <- as.numeric( tcrossprod( ThetaSR, R ) )
-        # the coefficients matrix are from the admixture proportions, but they have to be arranged in a very weird way to match flat L
-        # NOTE: for glmnet we could use sparse matrix!
-        n <- nrow( Q )
+        B <- tcrossprod( ThetaSR, R )
+        # start constructing the output L
         K <- ncol( Q )
-        A <- matrix( 0, nrow = n * K, ncol = K * ( K + 1L ) / 2L )
-        for ( u in 1L : K ) {
-            # place a copy of a subset of Q in desired location
-            # it's hard to explain here why these formulas work, definitely need a picture for that!
-            indexes_rows <- ( 1L : n ) + ( u - 1L ) * n
-            indexes_cols <- ( 1L : u ) + u * ( u - 1L ) / 2L
-            A[ indexes_rows, indexes_cols ] <- Q[ , 1L : u ]
-        }
-        # solve system of equations with non-negative constraint, or both [0,1] bounds
-        # this L is flat one
-        if ( algorithm == 'nnls' ) {
-            x <- nnls::nnls( A, b )$x
-            # only this case requires additional crude enforcement of upper bound (not good enough in some cases!)
-            x[ x > 1 ] <- 1
-        } else if ( algorithm == 'bvls' ) {
-            x <- bvls::bvls( A, b, rep.int( 0, ncol(A) ), rep.int( 1, ncol(A) ) )$x
-        } else if ( algorithm == 'glmnet' ) {
-            # `alpha = 0`: use "ridge" penalty
-            # reduced default tolerance of 1e-7 because exact solutions were not good enough
-            x <- glmnet::glmnet( A, b, alpha = 0, lambda = gamma, intercept = FALSE, lower.limits = 0, upper.limits = 1, thresh = 1e-20 )$beta[,1]
-        }
-        # unflatten L!
         L <- matrix( 0, K, K )
-        # this setup was confirmed to work in toy examples (fills by columns too, as desired)
-        L[ upper.tri( L, diag = TRUE ) ] <- x
+        # solve each column of L separately
+        for ( i in 1L : K ) {
+            # subset the matrices of interest
+            # make sure A is a matrix even for i==1L; b is always a vector
+            A <- Q[ , 1L : i, drop = FALSE ]
+            b <- B[ , i ]
+            # solve system of equations with non-negative constraint, or both [0,1] bounds
+            # this L is flat one
+            if ( algorithm == 'nnls' ) {
+                x <- nnls::nnls( A, b )$x
+                # only this case requires additional crude enforcement of upper bound (not good enough in some cases!)
+                x[ x > 1 ] <- 1
+            } else if ( algorithm == 'bvls' ) {
+                x <- bvls::bvls( A, b, rep.int( 0, ncol(A) ), rep.int( 1, ncol(A) ) )$x
+            } else if ( algorithm == 'glmnet' ) {
+
+                if ( i == 1L ) {
+                    # glmnet doesn't work to solve a single variable, super annoying!
+                    # I wrote my own solver for that nearly trivial case
+                    x <- glmnet_one_bounded( A, b, gamma )
+                } else {
+                    # `alpha = 0`: use "ridge" penalty
+                    # reduced default tolerance of 1e-7 because exact solutions were not good enough
+                    x <- glmnet::glmnet( A, b, alpha = 0, lambda = gamma, intercept = FALSE, lower.limits = 0, upper.limits = 1, thresh = 1e-20 )$beta[,1]
+                }
+            }
+            # save column in desired place
+            L[ 1L : i , i ] <- x
+        }
     }
     
     return( L )
 }
 
+glmnet_one_bounded <- function( a, b, gamma ) {
+    # this is very silly, but glmnet won't work if there's a single variable to solve for
+    # so let's do it explicitly
+    # this is objective, for reference:
+    # O = ( a * x - b ) %*% t( a * x - b ) + gamma * x^2
+    # this is unbounded solution
+    #x <- ( b %*% a ) / ( crossprod( a ) + gamma )
+    x <- crossprod( a, b ) / ( crossprod( a ) + gamma )
+
+    # if solution is in bounds, that's the desired solution!
+    if ( 0 < x && x < 1 )
+        return( x )
+    
+    # else, if solution is out of bounds, for this single variable case only other solutions are edge cases, i.e. 0 and 1
+    obj0 <- crossprod( b )
+    obj1 <- crossprod( a - b ) + gamma
+    return( if ( obj0 > obj1 ) 0 else 1 )
+}

@@ -23,3 +23,7 @@ Non-code updates:
 * Refactored recurrent tests using new internal `validate_{Q,R,L}` functions.
 * Added this `NEWS.md` file
 
+# admixcor 0.0.2.9000 (2023-08-17)
+
+- Function `admixcor` simplified internal `update_L` for all non-default `L_algorithm` cases so variables are optimized in independent blocks.  Original set them up as a single large problem to solve, which resulted in more complicated code and greater memory usage than the updated form.
+  - Did have to write internal `glmnet_one_bounded` to solve the trivial case of bounded `glmnet` for a single variable, which `glmnet` itself refuses to solve (it requires two or more unknowns).
