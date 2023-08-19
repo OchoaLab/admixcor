@@ -17,11 +17,10 @@ update_L <- function( ThetaSR, Q, R, gamma = 0, I = NULL, algorithm = c('origina
 
         # alpha = 1 / sqrt( max( L %*% t( L ) ) )
     } else if ( algorithm == 'nnls' || algorithm == 'bvls' || algorithm == 'glmnet' ) {
-        # uses non-negative or bounded variable least squares, which are equivalent to our problem without regularization
-        # solves exactly the requirement that the lower bound be zero, and exactly forces lower triangle to be zero during optimization, but does not set upper bound directly, we set strict cap of 1 as before
-
-
-        # first set up the problem to resemble a linear regression for L
+        # uses non-negative (nnls) or bounded variable least squares (bvls), which are equivalent to our problem without regularization; glmnet in theory solves our problem with regularization!
+        # nnls solves exactly the requirement that the lower bound be zero, and exactly forces lower triangle to be zero during optimization, but does not set upper bound directly, we set strict cap of 1 as before
+        
+        # first set up the problem to resemble a linear regression for L, of the form Ax=b
         B <- tcrossprod( ThetaSR, R )
         # start constructing the output L
         K <- ncol( Q )
@@ -33,13 +32,12 @@ update_L <- function( ThetaSR, Q, R, gamma = 0, I = NULL, algorithm = c('origina
             A <- Q[ , 1L : i, drop = FALSE ]
             b <- B[ , i ]
             # solve system of equations with non-negative constraint, or both [0,1] bounds
-            # this L is flat one
             if ( algorithm == 'nnls' ) {
                 x <- nnls::nnls( A, b )$x
                 # only this case requires additional crude enforcement of upper bound (not good enough in some cases!)
                 x[ x > 1 ] <- 1
             } else if ( algorithm == 'bvls' ) {
-                x <- bvls::bvls( A, b, rep.int( 0, ncol(A) ), rep.int( 1, ncol(A) ) )$x
+                x <- bvls::bvls( A, b, rep.int( 0, i ), rep.int( 1, i ) )$x
             } else if ( algorithm == 'glmnet' ) {
 
                 if ( i == 1L ) {

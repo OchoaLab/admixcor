@@ -6,6 +6,7 @@ admixcor <- function(
                      delta = 0.01,
                      Q_type = c('kmeans', 'random', 'uniform'),
                      L_type = c('identity', 'uniform', 'diagrandom', 'random'),
+                     Q_algorithm = c('original', 'nnls', 'bvls', 'glmnet'),
                      L_algorithm = c('original', 'nnls', 'bvls', 'glmnet'),
                      tol = sqrt( .Machine$double.eps ), # 1e-15
                      nstep_max = 100000,
@@ -15,6 +16,7 @@ admixcor <- function(
     Q_type <- match.arg( Q_type )
     L_type <- match.arg( L_type )
     L_algorithm <- match.arg( L_algorithm )
+    Q_algorithm <- match.arg( Q_algorithm )
     
     # number of individuals is dimensions of Theta
     n <- nrow( Theta )
@@ -60,7 +62,7 @@ admixcor <- function(
         # apply the updates, one at the time
         R1 <- update_R( ThetaSR, Q0, L0 )
         L1 <- update_L( ThetaSR, Q0, R1, gamma, I, algorithm = L_algorithm )
-        Q1 <- update_Q( ThetaSR, L1, R1, delta, I )
+        Q1 <- update_Q( ThetaSR, L1, R1, delta, I, algorithm = Q_algorithm )
         
         # calculate step sizes, to assess convergence
 	ndQ <- norm( Q0 - Q1, "F" )^2
