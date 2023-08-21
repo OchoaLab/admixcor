@@ -37,3 +37,6 @@ Non-code updates:
 - Function `admixcor` option `Q_algorithm` added algorithm "quadprog" to solve optimizations more exactly with all constraints into account.
   - Added dependency `quadprog`.
 
+# admixcor 0.0.5.9000 (2023-08-21)
+
+- Function `admixcor` option `Q_algorithm` added algorithm "quadprog-compact", hoping it performs better on account of sparsity of constraints

@@ -1,4 +1,4 @@
-update_Q <- function( ThetaSR, L, R, delta, I, algorithm = c('original', 'nnls', 'bvls', 'glmnet', 'quadprog') ) {
+update_Q <- function( ThetaSR, L, R, delta, I, algorithm = c('original', 'nnls', 'bvls', 'glmnet', 'quadprog', 'quadprog-compact') ) {
     # process options
     algorithm <- match.arg( algorithm )
 
@@ -13,7 +13,7 @@ update_Q <- function( ThetaSR, L, R, delta, I, algorithm = c('original', 'nnls',
         ##     Q[j,] <- ifelse( Q[j,] < 0.0, Q[j,] - min(Q[j,]) + 0.0001, Q[j,] )
         ## }
         ## Q <- Q / rowSums(Q)
-    } else if ( algorithm == 'nnls' || algorithm == 'bvls' || algorithm == 'glmnet' || algorithm == 'quadprog' ) {
+    } else if ( algorithm == 'nnls' || algorithm == 'bvls' || algorithm == 'glmnet' || algorithm == 'quadprog' || algorithm == 'quadprog-compact' ) {
         # uses non-negative (nnls) or bounded variable least squares (bvls), which are close to our problem without regularization; glmnet adds regularization; all are improvement over original which has no constraints at all (at first), but none of them (except quadprog) directly restrict to simplex so projection is still necessary afterwards
         
         # first set up the problem to resemble a linear regression for Q, of the form Ax=b
@@ -27,13 +27,31 @@ update_Q <- function( ThetaSR, L, R, delta, I, algorithm = c('original', 'nnls',
         n <- nrow( ThetaSR )
         K <- ncol( ThetaSR )
         Q <- matrix( 0, n, K )
-        if ( algorithm == 'quadprog' ) {
+        if ( algorithm == 'quadprog' || algorithm == 'quadprog-compact' ) {
             # calculate some matrices shared by all individuals
             #D <- crossprod( A ) + delta * I # equivalent to below
             D <- tcrossprod( L ) + delta * I
             # build constraint matrix (called Amat in solve.QP)
             # NOTE: these are the same across iterations so could be built outside loop to make more efficient!
-            C <- cbind( 1, I, -I )
+            if ( algorithm == 'quadprog' ) {
+                C <- cbind( 1, I, -I )
+            } else {
+                # compact version has weird notation, but might perform better given the sparsity of our problem
+                Cind <- matrix( 0L, nrow = K + 1L, ncol = 2L * K + 1L )
+                Cmat <- matrix( 0L, nrow = K, ncol = 2L * K + 1L )
+                # add first constraint, only dense one
+                Cind[ 1L, ] <- 1L # first value is number of non-zero values, one for all but the first case (to overwrite next)
+                Cind[ 1L, 1L ] <- K # first value is number of non-zero values
+                Cind[ 2L : ( K + 1L ), 1L ] <- 1L : K # list all indexes for frows contiguously
+                Cmat[ , 1L ] <- 1L # coefficents
+                # now list every sparse constraint, each block as needed
+                Cind[ 2L, 2L : (K + 1L) ] <- 1L : K
+                Cind[ 2L, (K + 2L) : (2L * K + 1L) ] <- 1L : K
+                # all coefficients are 1 for first block
+                Cmat[ 1L, 2L : (K + 1L) ] <- 1L
+                # and -1 for last block
+                Cmat[ 1L, (K + 2L) : (2L * K + 1L) ] <- -1L
+            }
             # and constraint vector (called bvec in solve.QP)
             c <- c( 1, rep.int( 0, K ), rep.int( -1, K ) )
             # only first one is equality constraint
@@ -43,11 +61,15 @@ update_Q <- function( ThetaSR, L, R, delta, I, algorithm = c('original', 'nnls',
         for ( i in 1L : n ) {
             # get corresponding row of ThetaSR (column of its transpose)
             b <- ThetaSR[ i, ]
-            if ( algorithm == 'quadprog' ) {
+            if ( algorithm == 'quadprog' || algorithm == 'quadprog-compact' ) {
                 # unfortunately this varies per individual because b varies
                 d <- crossprod( A, b )
                 # NOTE: consider compact (sparse) version of problem!  Also pre-factorizing D into "R-inv", to share for all individuals (but it will change across iterations)
-                x <- quadprog::solve.QP( D, d, C, c, meq )$solution
+                if ( algorithm == 'quadprog' ) {
+                    x <- quadprog::solve.QP( D, d, C, c, meq )$solution
+                } else {
+                    x <- quadprog::solve.QP.compact( D, d, Cmat, Cind, c, meq )$solution
+                }
             } else {
                 # solve system of equations with non-negative constraint, or both [0,1] bounds
                 if ( algorithm == 'nnls' ) {

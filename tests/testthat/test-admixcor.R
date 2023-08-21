@@ -317,6 +317,13 @@ test_that( 'update_Q works', {
     # can only recover true solution if we don't penalize!
     Q2 <- update_Q( ThetaSR, L, R, 0, I, algorithm = 'quadprog' )
     expect_equal( Q2, Q )
+
+    # ditto compact version of quadprog
+    Q2 <- update_Q( ThetaSR, L2, R, delta, I, algorithm = 'quadprog-compact' )
+    validate_Q( Q2, n, K )
+    # can only recover true solution if we don't penalize!
+    Q2 <- update_Q( ThetaSR, L, R, 0, I, algorithm = 'quadprog-compact' )
+    expect_equal( Q2, Q )
 })
 
 
@@ -414,6 +421,10 @@ test_that( 'admixcor works', {
     validate_admixcor( obj, n, K )
     expect_silent(
         obj <- admixcor( Theta, K, tol = tol, Q_algorithm = 'quadprog' )
+    )
+    validate_admixcor( obj, n, K )
+    expect_silent(
+        obj <- admixcor( Theta, K, tol = tol, Q_algorithm = 'quadprog-compact' )
     )
     validate_admixcor( obj, n, K )
 })
