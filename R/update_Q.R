@@ -1,4 +1,4 @@
-update_Q <- function( ThetaSR, L, R, delta, I, algorithm = c('original', 'nnls', 'bvls', 'glmnet') ) {
+update_Q <- function( ThetaSR, L, R, delta, I, algorithm = c('original', 'nnls', 'bvls', 'glmnet', 'quadprog') ) {
     # process options
     algorithm <- match.arg( algorithm )
 
@@ -13,8 +13,8 @@ update_Q <- function( ThetaSR, L, R, delta, I, algorithm = c('original', 'nnls',
         ##     Q[j,] <- ifelse( Q[j,] < 0.0, Q[j,] - min(Q[j,]) + 0.0001, Q[j,] )
         ## }
         ## Q <- Q / rowSums(Q)
-    } else if ( algorithm == 'nnls' || algorithm == 'bvls' || algorithm == 'glmnet' ) {
-        # uses non-negative (nnls) or bounded variable least squares (bvls), which are close to our problem without regularization; glmnet adds regularization; all are improvement over original which has no constraints at all (at first), but none of them directly restrict to simplex so projection is still necessary afterwards
+    } else if ( algorithm == 'nnls' || algorithm == 'bvls' || algorithm == 'glmnet' || algorithm == 'quadprog' ) {
+        # uses non-negative (nnls) or bounded variable least squares (bvls), which are close to our problem without regularization; glmnet adds regularization; all are improvement over original which has no constraints at all (at first), but none of them (except quadprog) directly restrict to simplex so projection is still necessary afterwards
         
         # first set up the problem to resemble a linear regression for Q, of the form Ax=b
         # Q %*% ( L %*% R ) = ThetaSR
@@ -27,22 +27,41 @@ update_Q <- function( ThetaSR, L, R, delta, I, algorithm = c('original', 'nnls',
         n <- nrow( ThetaSR )
         K <- ncol( ThetaSR )
         Q <- matrix( 0, n, K )
+        if ( algorithm == 'quadprog' ) {
+            # calculate some matrices shared by all individuals
+            #D <- crossprod( A ) + delta * I # equivalent to below
+            D <- tcrossprod( L ) + delta * I
+            # build constraint matrix (called Amat in solve.QP)
+            # NOTE: these are the same across iterations so could be built outside loop to make more efficient!
+            C <- cbind( 1, I, -I )
+            # and constraint vector (called bvec in solve.QP)
+            c <- c( 1, rep.int( 0, K ), rep.int( -1, K ) )
+            # only first one is equality constraint
+            meq <- 1
+        }
         # solve each row of Q (i.e. column of t(Q)) separately
         for ( i in 1L : n ) {
             # get corresponding row of ThetaSR (column of its transpose)
             b <- ThetaSR[ i, ]
-            # solve system of equations with non-negative constraint, or both [0,1] bounds
-            if ( algorithm == 'nnls' ) {
-                x <- nnls::nnls( A, b )$x
-            } else if ( algorithm == 'bvls' ) {
-                x <- bvls::bvls( A, b, rep.int( 0, K ), rep.int( 1, K ) )$x
-            } else if ( algorithm == 'glmnet' ) {
-                # `alpha = 0`: use "ridge" penalty
-                # reduced default tolerance of 1e-7 because exact solutions were not good enough
-                x <- glmnet::glmnet( A, b, alpha = 0, lambda = delta, intercept = FALSE, lower.limits = 0, upper.limits = 1, thresh = 1e-20 )$beta[,1]
+            if ( algorithm == 'quadprog' ) {
+                # unfortunately this varies per individual because b varies
+                d <- crossprod( A, b )
+                # NOTE: consider compact (sparse) version of problem!  Also pre-factorizing D into "R-inv", to share for all individuals (but it will change across iterations)
+                x <- quadprog::solve.QP( D, d, C, c, meq )$solution
+            } else {
+                # solve system of equations with non-negative constraint, or both [0,1] bounds
+                if ( algorithm == 'nnls' ) {
+                    x <- nnls::nnls( A, b )$x
+                } else if ( algorithm == 'bvls' ) {
+                    x <- bvls::bvls( A, b, rep.int( 0, K ), rep.int( 1, K ) )$x
+                } else if ( algorithm == 'glmnet' ) {
+                    # `alpha = 0`: use "ridge" penalty
+                    # reduced default tolerance of 1e-7 because exact solutions were not good enough
+                    x <- glmnet::glmnet( A, b, alpha = 0, lambda = delta, intercept = FALSE, lower.limits = 0, upper.limits = 1, thresh = 1e-20 )$beta[,1]
+                }
+                # now project to simplex (fixes upper bound cap for nnls, only case that doesn't enforce it directly)
+                x <- projsplx( x )
             }
-            # now project to simplex (fixes upper bound cap for nnls, only case that doesn't enforce it directly)
-            x <- projsplx( x )
             # save column in desired place
             Q[ i, ] <- x
         }

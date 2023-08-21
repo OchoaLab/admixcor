@@ -31,3 +31,9 @@ Non-code updates:
 # admixcor 0.0.3.9000 (2023-08-18)
 
 - Function `admixcor` added option `Q_algorithm` using the same four algorithms from `L_algorithm`.
+
+# admixcor 0.0.4.9000 (2023-08-21)
+
+- Function `admixcor` option `Q_algorithm` added algorithm "quadprog" to solve optimizations more exactly with all constraints into account.
+  - Added dependency `quadprog`.
+

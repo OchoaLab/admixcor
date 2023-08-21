@@ -25,7 +25,11 @@ validate_Q <- function( Q, n, K ) {
     expect_true( is.matrix( Q ) )
     expect_equal( nrow( Q ), n )
     expect_equal( ncol( Q ), K )
-    expect_true( min( Q ) >= 0 )
+    # weird way to test this inequality but with tolerance
+    ## expect_true( min( Q ) >= 0 )
+    minQ <- min( Q )
+    if ( minQ > 0 ) minQ <- 0
+    expect_equal( minQ, 0 )
     expect_equal( rowSums( Q ), rep.int( 1, n ) )
 }
 
@@ -306,6 +310,13 @@ test_that( 'update_Q works', {
     # can only recover true solution if we don't penalize!
     Q2 <- update_Q( ThetaSR, L, R, 0, I, algorithm = 'glmnet' )
     expect_equal( Q2, Q )
+
+    # ditto quadprog
+    Q2 <- update_Q( ThetaSR, L2, R, delta, I, algorithm = 'quadprog' )
+    validate_Q( Q2, n, K )
+    # can only recover true solution if we don't penalize!
+    Q2 <- update_Q( ThetaSR, L, R, 0, I, algorithm = 'quadprog' )
+    expect_equal( Q2, Q )
 })
 
 
@@ -399,6 +410,10 @@ test_that( 'admixcor works', {
     validate_admixcor( obj, n, K )
     expect_silent(
         obj <- admixcor( Theta, K, tol = tol, Q_algorithm = 'glmnet' )
+    )
+    validate_admixcor( obj, n, K )
+    expect_silent(
+        obj <- admixcor( Theta, K, tol = tol, Q_algorithm = 'quadprog' )
     )
     validate_admixcor( obj, n, K )
 })

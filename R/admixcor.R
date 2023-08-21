@@ -6,7 +6,7 @@ admixcor <- function(
                      delta = 0.01,
                      Q_type = c('kmeans', 'random', 'uniform'),
                      L_type = c('identity', 'uniform', 'diagrandom', 'random'),
-                     Q_algorithm = c('original', 'nnls', 'bvls', 'glmnet'),
+                     Q_algorithm = c('original', 'nnls', 'bvls', 'glmnet', 'quadprog'),
                      L_algorithm = c('original', 'nnls', 'bvls', 'glmnet'),
                      tol = sqrt( .Machine$double.eps ), # 1e-15
                      nstep_max = 100000,
