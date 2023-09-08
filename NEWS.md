@@ -40,3 +40,9 @@ Non-code updates:
 # admixcor 0.0.5.9000 (2023-08-21)
 
 - Function `admixcor` option `Q_algorithm` added algorithm "quadprog-compact", hoping it performs better on account of sparsity of constraints
+
+# admixcor 0.0.6.9000 (2023-09-08)
+
+
+- Added minimal `README.md` with description of project and installation instructions.
+
