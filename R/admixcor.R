@@ -93,6 +93,7 @@ admixcor <- function(
             f_best <- f0
             Q_best <- Q0
             L_best <- L0
+            R_best <- R0
             # nice extra info, mostly for troubleshooting
             nstep_best <- nstep
             ndQ_best <- ndQ
@@ -130,7 +131,11 @@ admixcor <- function(
             Q = Q_best,
             Psi = Psi_best,
             f = f_best[1L], # only first value makes most sense in this context
-            report = report
+            report = report,
+            # for ease of troubleshooting, all internal values needed to calculate on the outside the internal objective function
+            ThetaSR = ThetaSR,
+            L = L_best,
+            R = R_best
         )
     )
 }

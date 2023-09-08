@@ -75,8 +75,11 @@ validate_initialize <- function( obj, n, K ) {
 # uniform testing for all cases
 validate_admixcor <- function( obj, n, K ) {
     expect_true( is.list( obj ) )
-    expect_equal( names( obj ), c('Q', 'Psi', 'f', 'report') )
+    expect_equal( names( obj ), c('Q', 'Psi', 'f', 'report', 'ThetaSR', 'L', 'R') )
     validate_Q( obj$Q, n, K )
+    validate_L( obj$L, K )
+    validate_R( obj$R, K, I )
+    # NOTE: we're not validating ThetaSR, that's ok, it's simple and not a worry (it was validated earlier)
     expect_true( is.matrix( obj$Psi ) )
     expect_equal( nrow( obj$Psi ), K )
     expect_equal( ncol( obj$Psi ), K )
