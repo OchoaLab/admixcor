@@ -22,19 +22,19 @@ admixcor <- function(
     n <- nrow( Theta )
 
     # decompose Theta for "linear" objective
-    ThetaSR <- Theta_square_root( Theta, K )
+    ThetaSR <- theta_square_root( Theta, K )
     # normalize gamma to be on a more similar scale to delta, etc
     # takes into account that dim(L) = (K, K) is much smaller than dim(Q) = dim(ThetaSR) = (n, K)
     gamma <- gamma * n / K
     
     # initialize other variables
-    Vars <- Initialize( ThetaSR, K, n, Q_type, L_type )
+    Vars <- initialize( ThetaSR, K, n, Q_type, L_type )
     Q0 <- Vars$Q
     L0 <- Vars$L
     R0 <- Vars$R
 
     # calculate objective of this initial (very bad) solution
-    f0 <- Objective( ThetaSR, Q0, L0, R0, gamma, delta )
+    f0 <- objective( ThetaSR, Q0, L0, R0, gamma, delta )
 
     # constant used in regularized expressions
     I <- diag( 1, K, K )
@@ -68,7 +68,7 @@ admixcor <- function(
 	ndQ <- norm( Q0 - Q1, "F" )^2
         
         # calculate new objective
-	f1 <- Objective( ThetaSR, Q1, L1, R1, gamma, delta )
+	f1 <- objective( ThetaSR, Q1, L1, R1, gamma, delta )
         # and its delta too (this matches norm formulations above)
         # use first value only (total objective, including penalty terms!)
         df <- abs( f1[1L] - f0[1L] )

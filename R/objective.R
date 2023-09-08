@@ -1,4 +1,5 @@
-Objective <- function( ThetaSR, Q, L, R, gamma, delta ) {
+#' @export
+objective <- function( ThetaSR, Q, L, R, gamma, delta ) {
     ## # original version (not linearized)
     ## # reconstruct Psi
     ## Psi <- tcrossprod( L )

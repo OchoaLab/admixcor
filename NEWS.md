@@ -44,5 +44,7 @@ Non-code updates:
 # admixcor 0.0.6.9000 (2023-09-08)
 
 - Function `admixcor` now returns `ThetaSR` (the square root of the coancestry matrix `Theta`), `L` (the Cholesky decomposition of `Psi` that was already returned), and `R` (the rotation matrix relating `ThetaSR` to the non-negative admixture model decomposition).  This was done to ease troubleshooting, returning previously internal values that are needed to calculate on the outside the internal "square root" or "linearized" objective function.
+- Function `objective` is now exported!  (Also for troubleshooting)
+- Names of internal functions `initialize`, `theta_square_root`, and now exported function `objective` are now lowercased, so the style is consistent with the rest of the functions.
 - Added minimal `README.md` with description of project and installation instructions.
 

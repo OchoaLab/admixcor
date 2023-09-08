@@ -134,10 +134,10 @@ test_that( 'align_Q works', {
     expect_true( all( indexes %in% 1L : K ) )
 })
 
-test_that( 'Theta_square_root works', {
+test_that( 'theta_square_root works', {
     # does a dimensionality reduction too, so it's not an exact square root unless it was low rank and it is correct
     expect_silent(
-        Theta_sqrt <- Theta_square_root( Theta, K )
+        Theta_sqrt <- theta_square_root( Theta, K )
     )
     expect_true( is.matrix( Theta_sqrt ) )
     expect_equal( nrow( Theta_sqrt ), n )
@@ -148,24 +148,24 @@ test_that( 'Theta_square_root works', {
 })
 
 # now that the above function was validated, use it to calculate square root
-ThetaSR <- Theta_square_root( Theta, K )
+ThetaSR <- theta_square_root( Theta, K )
 # also calculate a few other true square root model parameters
 # this is correct only because true Psi is diagonal, otherwise ought to use Cholesky!
 L <- sqrt( Psi )
 # need true rotation too...
 R <- solve( L ) %*% MASS::ginv( Q ) %*% ThetaSR
 # NOTE: for exact solution, this R is automatically rotation (no need to additionally project to rotation space)
-# also create a random L used for tests, copying code from Initialize.R with `L_type == 'random'`
+# also create a random L used for tests, copying code from initialize.R with `L_type == 'random'`
 L2 <- matrix( runif( K^2 ), K, K ) / sqrt(K)
 # ensure this is like cholesky
 L2[ lower.tri( L2 ) ] <- 0
 
 
-test_that( 'Objective works', {
+test_that( 'objective works', {
     # in this test match is exact, so objective should be zero
     # (but only if penalties are zero too!)
     expect_silent( 
-        f <- Objective( ThetaSR, Q, L, R, gamma = 0, delta = 0 )
+        f <- objective( ThetaSR, Q, L, R, gamma = 0, delta = 0 )
     )
     expect_equal( f, rep.int( 0, 4L ) )
 
@@ -175,7 +175,7 @@ test_that( 'Objective works', {
     R <- diag( 1, K )
     # passed Q2 instead of Q here too, so it's totally random
     expect_silent( 
-        f <- Objective( ThetaSR, Q2, L, R, gamma, delta )
+        f <- objective( ThetaSR, Q2, L, R, gamma, delta )
     )
     expect_true( is.numeric( f ) )
     expect_equal( length( f ), 4L )
@@ -184,36 +184,36 @@ test_that( 'Objective works', {
     expect_equal( f[1L], sum( f[2L:4L] ) ) # first is sum of the rest
 })
 
-test_that( 'Initialize works', {
+test_that( 'initialize works', {
     # test all Q_types!
     expect_silent(
-        obj <- Initialize( Theta, K, n, Q_type = 'kmeans' )
+        obj <- initialize( Theta, K, n, Q_type = 'kmeans' )
     )
     validate_initialize( obj, n, K )
     expect_silent(
-        obj <- Initialize( Theta, K, n, Q_type = 'random' )
+        obj <- initialize( Theta, K, n, Q_type = 'random' )
     )
     validate_initialize( obj, n, K )
     expect_silent(
-        obj <- Initialize( Theta, K, n, Q_type = 'uniform' )
+        obj <- initialize( Theta, K, n, Q_type = 'uniform' )
     )
     validate_initialize( obj, n, K )
 
     # test all L_types!
     expect_silent(
-        obj <- Initialize( Theta, K, n, L_type = 'identity' )
+        obj <- initialize( Theta, K, n, L_type = 'identity' )
     )
     validate_initialize( obj, n, K )
     expect_silent(
-        obj <- Initialize( Theta, K, n, L_type = 'uniform' )
+        obj <- initialize( Theta, K, n, L_type = 'uniform' )
     )
     validate_initialize( obj, n, K )
     expect_silent(
-        obj <- Initialize( Theta, K, n, L_type = 'diagrandom' )
+        obj <- initialize( Theta, K, n, L_type = 'diagrandom' )
     )
     validate_initialize( obj, n, K )
     expect_silent(
-        obj <- Initialize( Theta, K, n, L_type = 'random' )
+        obj <- initialize( Theta, K, n, L_type = 'random' )
     )
     validate_initialize( obj, n, K )
 })

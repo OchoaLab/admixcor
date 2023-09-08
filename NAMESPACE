@@ -2,4 +2,5 @@
 
 export(admixcor)
 export(align_Q)
+export(objective)
 export(rmsd_Q)

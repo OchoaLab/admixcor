@@ -7,7 +7,7 @@
 #   - 'kmeans' (default) continues to be best in latest tests
 #   - 'random' is not bad but usually a little worse than 'kmeans'
 #   - 'uniform' is super bad, always converged in one iteration (current operation order and other options, perhaps this changes), so it appears to be fixed point.  Will leave in order to run more tests later
-Initialize <- function(
+initialize <- function(
                        Theta,
                        K,
                        n,
