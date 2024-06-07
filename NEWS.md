@@ -51,3 +51,7 @@ Non-code updates:
 # admixcor 0.0.7.9000 (2024-06-07)
 
 - Function `admixcor` added option `kronecker` (default `FALSE` was previous behavior).  If `TRUE`, it frames the update of the internal `L` matrix more precisely using a Kronecker product (the previous formulation applied an approximate trick by pre-solving for one of the matrices, which works when there are no constraints but may be causing problems otherwise).  Only applies when `L_algorithm` is not "original".
+
+# admixcor 0.0.8.9000 (2024-06-07)
+
+- Function `admixcor` removed option `kronecker`.  The new default behavior is the previous `kronecker = TRUE` case, as evaluations confirmed the theoretical expectation that the Kronecker version is better than the previous approximate formulation, though performance differences are usually small.

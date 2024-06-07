@@ -281,20 +281,6 @@ test_that( 'update_L works', {
     # can only recover true solution if we don't penalize!
     L2 <- update_L( ThetaSR, Q, R, 0, I, algorithm = 'glmnet' )
     expect_equal( L2, L )
-
-    # now kronecker versions!  Doesn't apply to algorithm='original" (default)
-    L2 <- update_L( ThetaSR, Q2, R, algorithm = 'nnls', kronecker = TRUE )
-    validate_L( L2, K )
-    L2 <- update_L( ThetaSR, Q, R, algorithm = 'nnls', kronecker = TRUE )
-    expect_equal( L2, L )
-    L2 <- update_L( ThetaSR, Q2, R, algorithm = 'bvls', kronecker = TRUE )
-    validate_L( L2, K )
-    L2 <- update_L( ThetaSR, Q, R, algorithm = 'bvls', kronecker = TRUE )
-    expect_equal( L2, L )
-    L2 <- update_L( ThetaSR, Q2, R, gamma, I, algorithm = 'glmnet', kronecker = TRUE )
-    validate_L( L2, K )
-    L2 <- update_L( ThetaSR, Q, R, 0, I, algorithm = 'glmnet', kronecker = TRUE )
-    expect_equal( L2, L )
 })
 
 test_that( 'update_Q works', {
@@ -442,20 +428,6 @@ test_that( 'admixcor works', {
     validate_admixcor( obj, n, K )
     expect_silent(
         obj <- admixcor( Theta, K, tol = tol, Q_algorithm = 'quadprog-compact' )
-    )
-    validate_admixcor( obj, n, K )
-
-    # kronecker versions
-    expect_silent(
-        obj <- admixcor( Theta, K, tol = tol, Q_algorithm = 'quadprog', L_algorithm = 'nnls', kronecker = TRUE )
-    )
-    validate_admixcor( obj, n, K )
-    expect_silent(
-        obj <- admixcor( Theta, K, tol = tol, Q_algorithm = 'quadprog', L_algorithm = 'bvls', kronecker = TRUE )
-    )
-    validate_admixcor( obj, n, K )
-    expect_silent(
-        obj <- admixcor( Theta, K, tol = tol, Q_algorithm = 'quadprog', L_algorithm = 'glmnet', kronecker = TRUE )
     )
     validate_admixcor( obj, n, K )
 })
