@@ -1,5 +1,5 @@
 # update L (square root of Psi)
-update_L <- function( ThetaSR, Q, R, gamma = 0, I = NULL, algorithm = c('original', 'nnls', 'bvls', 'glmnet') ) {
+update_L <- function( ThetaSR, Q, R, gamma = 0, I = NULL, algorithm = c('original', 'nnls', 'bvls', 'glmnet'), kronecker = FALSE ) {
     # process options
     algorithm <- match.arg( algorithm )
 
@@ -19,28 +19,35 @@ update_L <- function( ThetaSR, Q, R, gamma = 0, I = NULL, algorithm = c('origina
     } else if ( algorithm == 'nnls' || algorithm == 'bvls' || algorithm == 'glmnet' ) {
         # uses non-negative (nnls) or bounded variable least squares (bvls), which are equivalent to our problem without regularization; glmnet in theory solves our problem with regularization!
         # nnls solves exactly the requirement that the lower bound be zero, and exactly forces lower triangle to be zero during optimization, but does not set upper bound directly, we set strict cap of 1 as before
-        
+
         # first set up the problem to resemble a linear regression for L, of the form Ax=b
-        B <- tcrossprod( ThetaSR, R )
+        
         # start constructing the output L
         K <- ncol( Q )
         L <- matrix( 0, K, K )
-        # solve each column of L separately
-        for ( i in 1L : K ) {
-            # subset the matrices of interest
-            # make sure A is a matrix even for i==1L; b is always a vector
-            A <- Q[ , 1L : i, drop = FALSE ]
-            b <- B[ , i ]
+        
+        if ( kronecker ) {
+            # proper solution that doesn't presolve for R, which is much more complicated than the original hack that I've now proven is wrong
+            # this is the proper way
+            # https://en.wikipedia.org/wiki/Kronecker_product#Matrix_equations
+            # first version assumes L is a full matrix, and the notation is quite standard for Kronecker product (%x%) vec trick (as.vector(matrix))
+            A <- t( R ) %x% Q
+            b <- as.vector( ThetaSR )
+            # now, half of L is zero, let's make sure that's reflected in the problem statement (so that constraint is enforced)
+            indexes <- as.vector( ! lower.tri( L ) )
+            A <- A[ , indexes ]
+            # now get solutions!
             # solve system of equations with non-negative constraint, or both [0,1] bounds
             if ( algorithm == 'nnls' ) {
                 x <- nnls::nnls( A, b )$x
                 # only this case requires additional crude enforcement of upper bound (not good enough in some cases!)
                 x[ x > 1 ] <- 1
             } else if ( algorithm == 'bvls' ) {
-                x <- bvls::bvls( A, b, rep.int( 0, i ), rep.int( 1, i ) )$x
+                # length of x, needed to set bounds
+                lx <- K * ( K + 1 ) / 2
+                x <- bvls::bvls( A, b, rep.int( 0, lx ), rep.int( 1, lx ) )$x
             } else if ( algorithm == 'glmnet' ) {
-
-                if ( i == 1L ) {
+                if ( K == 1L ) {
                     # glmnet doesn't work to solve a single variable, super annoying!
                     # I wrote my own solver for that nearly trivial case
                     x <- glmnet_one_bounded( A, b, gamma )
@@ -50,8 +57,39 @@ update_L <- function( ThetaSR, Q, R, gamma = 0, I = NULL, algorithm = c('origina
                     x <- glmnet::glmnet( A, b, alpha = 0, lambda = gamma, intercept = FALSE, lower.limits = 0, upper.limits = 1, thresh = 1e-20 )$beta[,1]
                 }
             }
-            # save column in desired place
-            L[ 1L : i , i ] <- x
+            # lastly, reform x into L, return that!
+            # (L was already a zero matrix, so the rest is all set!)
+            L[ upper.tri( L, diag = TRUE ) ] <- x
+        } else {
+            B <- tcrossprod( ThetaSR, R )
+            # solve each column of L separately
+            for ( i in 1L : K ) {
+                # subset the matrices of interest
+                # make sure A is a matrix even for i==1L; b is always a vector
+                A <- Q[ , 1L : i, drop = FALSE ]
+                b <- B[ , i ]
+                # solve system of equations with non-negative constraint, or both [0,1] bounds
+                if ( algorithm == 'nnls' ) {
+                    x <- nnls::nnls( A, b )$x
+                    # only this case requires additional crude enforcement of upper bound (not good enough in some cases!)
+                    x[ x > 1 ] <- 1
+                } else if ( algorithm == 'bvls' ) {
+                    x <- bvls::bvls( A, b, rep.int( 0, i ), rep.int( 1, i ) )$x
+                } else if ( algorithm == 'glmnet' ) {
+
+                    if ( i == 1L ) {
+                        # glmnet doesn't work to solve a single variable, super annoying!
+                        # I wrote my own solver for that nearly trivial case
+                        x <- glmnet_one_bounded( A, b, gamma )
+                    } else {
+                        # `alpha = 0`: use "ridge" penalty
+                        # reduced default tolerance of 1e-7 because exact solutions were not good enough
+                        x <- glmnet::glmnet( A, b, alpha = 0, lambda = gamma, intercept = FALSE, lower.limits = 0, upper.limits = 1, thresh = 1e-20 )$beta[,1]
+                    }
+                }
+                # save column in desired place
+                L[ 1L : i , i ] <- x
+            }
         }
     }
     

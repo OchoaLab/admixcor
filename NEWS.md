@@ -48,3 +48,6 @@ Non-code updates:
 - Names of internal functions `initialize`, `theta_square_root`, and now exported function `objective` are now lowercased, so the style is consistent with the rest of the functions.
 - Added minimal `README.md` with description of project and installation instructions.
 
+# admixcor 0.0.7.9000 (2024-06-07)
+
+- Function `admixcor` added option `kronecker` (default `FALSE` was previous behavior).  If `TRUE`, it frames the update of the internal `L` matrix more precisely using a Kronecker product (the previous formulation applied an approximate trick by pre-solving for one of the matrices, which works when there are no constraints but may be causing problems otherwise).  Only applies when `L_algorithm` is not "original".
