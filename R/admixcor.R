@@ -2,12 +2,12 @@
 admixcor <- function(
                      Theta,
                      K,
-                     gamma = 0.01,
-                     delta = 0.01,
+                     gamma = 0,
+                     delta = 0,
                      Q_type = c('kmeans', 'random', 'uniform'),
                      L_type = c('identity', 'uniform', 'diagrandom', 'random'),
                      Q_algorithm = c('original', 'nnls', 'bvls', 'glmnet', 'quadprog', 'quadprog-compact'),
-                     L_algorithm = c('original', 'nnls', 'bvls', 'glmnet'),
+                     L_algorithm = c('glmnet', 'bvls'),
                      tol = sqrt( .Machine$double.eps ), # 1e-15
                      nstep_max = 100000,
                      report_freq = 1000
@@ -61,7 +61,7 @@ admixcor <- function(
         
         # apply the updates, one at the time
         R1 <- update_R( ThetaSR, Q0, L0 )
-        L1 <- update_L( ThetaSR, Q0, R1, gamma, I, algorithm = L_algorithm )
+        L1 <- update_L( ThetaSR, Q0, R1, gamma, algorithm = L_algorithm )
         Q1 <- update_Q( ThetaSR, L1, R1, delta, I, algorithm = Q_algorithm )
         
         # calculate step sizes, to assess convergence

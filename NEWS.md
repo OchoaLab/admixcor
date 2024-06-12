@@ -55,3 +55,7 @@ Non-code updates:
 # admixcor 0.0.8.9000 (2024-06-07)
 
 - Function `admixcor` removed option `kronecker`.  The new default behavior is the previous `kronecker = TRUE` case, as evaluations confirmed the theoretical expectation that the Kronecker version is better than the previous approximate formulation, though performance differences are usually small.
+
+# admixcor 0.0.9.9000 (2024-06-11)
+
+- Function `admixcor` simplified option `L_algorithm`, which now defaults to `glmnet` and no longer accepts values `original` (performed worst) or `nnls` (too similar to `bvls`, which remains).  The default values for `gamma` and `delta` are now zero (both used to be 0.01).

@@ -252,34 +252,22 @@ test_that( 'update_R works', {
 })
 
 test_that( 'update_L works', {
+    # test the default glmnet first...
+    
     # test on random data first, make sure it doesn't break; all are globally set
     # here we use exact ThetaSR from real data, but random Q for test
-    L2 <- update_L( ThetaSR, Q2, R, gamma, I )
+    L2 <- update_L( ThetaSR, Q2, R, gamma )
     # test basic expectations
     validate_L( L2, K )
 
     # now try exact solution (true ThetaSR, Q and R), here it is recoverable in theory if we don't penalize!
-    L2 <- update_L( ThetaSR, Q, R, 0, I )
+    L2 <- update_L( ThetaSR, Q, R, 0 )
     expect_equal( L2, L )
 
-    # test new version based on nnls, repeating both earlier tests
-    # here it's fine to exclude gamma and I
-    L2 <- update_L( ThetaSR, Q2, R, algorithm = 'nnls' )
-    validate_L( L2, K )
-    L2 <- update_L( ThetaSR, Q, R, algorithm = 'nnls' )
-    expect_equal( L2, L )
-
-    # ditto bvls
+    # test bvls version (requires zero gamma), repeating both earlier tests
     L2 <- update_L( ThetaSR, Q2, R, algorithm = 'bvls' )
     validate_L( L2, K )
     L2 <- update_L( ThetaSR, Q, R, algorithm = 'bvls' )
-    expect_equal( L2, L )
-    
-    # ditto glmnet
-    L2 <- update_L( ThetaSR, Q2, R, gamma, I, algorithm = 'glmnet' )
-    validate_L( L2, K )
-    # can only recover true solution if we don't penalize!
-    L2 <- update_L( ThetaSR, Q, R, 0, I, algorithm = 'glmnet' )
     expect_equal( L2, L )
 })
 
@@ -397,15 +385,7 @@ test_that( 'admixcor works', {
 
     # and L algorithms!
     expect_silent(
-        obj <- admixcor( Theta, K, tol = tol, L_algorithm = 'nnls' )
-    )
-    validate_admixcor( obj, n, K )
-    expect_silent(
         obj <- admixcor( Theta, K, tol = tol, L_algorithm = 'bvls' )
-    )
-    validate_admixcor( obj, n, K )
-    expect_silent(
-        obj <- admixcor( Theta, K, tol = tol, L_algorithm = 'glmnet' )
     )
     validate_admixcor( obj, n, K )
 
