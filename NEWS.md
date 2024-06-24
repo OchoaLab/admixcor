@@ -59,3 +59,7 @@ Non-code updates:
 # admixcor 0.0.9.9000 (2024-06-11)
 
 - Function `admixcor` simplified option `L_algorithm`, which now defaults to `glmnet` and no longer accepts values `original` (performed worst) or `nnls` (too similar to `bvls`, which remains).  The default values for `gamma` and `delta` are now zero (both used to be 0.01).
+
+# admixcor 0.0.10.9000 (2024-06-23)
+
+- Function `admixcor` added option `vertex_refine`, which when `TRUE` (not default) explicitly tests vertices (all K unadmixed cases) for every individual, keeping the best if it improves upon previous solution at every update-Q iteration.

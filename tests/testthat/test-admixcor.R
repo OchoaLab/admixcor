@@ -17,6 +17,8 @@ gamma <- 0.01
 delta <- 0.01
 # constant used in regularized expressions
 I <- diag( 1, K, K )
+# a random quanitity for quadcomp tests
+d <- rnorm( K )
 
 ### generic validators
 
@@ -271,6 +273,30 @@ test_that( 'update_L works', {
     expect_equal( L2, L )
 })
 
+test_that( "obj_quadprog works", {
+    expect_silent(
+        obj <- obj_quadprog( Psi, d, Q2[1,] )
+    )
+})
+
+test_that( "update_Q_vertex_scan works", {
+    expect_silent(
+        data <- update_Q_vertex_scan( Psi, d )
+    )
+    expect_true( is.list( data ) )
+    expect_equal( names( data ), c('q', 'obj') )
+    expect_true( is.numeric( data$q ) )
+    expect_equal( length( data$q ), K )
+    expect_true( is.numeric( data$obj ) )
+    expect_equal( length( data$obj ), 1L )
+
+    # compare to slower, more explicit version
+    expect_silent(
+        data2 <- update_Q_vertex_scan( Psi, d, fast = FALSE )
+    )
+    expect_equal( data2, data )
+})
+
 test_that( 'update_Q works', {
     # test on random data first, make sure it doesn't break; all are globally set
     # here we use exact ThetaSR from real data, but random L for test
@@ -315,9 +341,33 @@ test_that( 'update_Q works', {
     # can only recover true solution if we don't penalize!
     Q2 <- update_Q( ThetaSR, L, R, 0, I, algorithm = 'quadprog-compact' )
     expect_equal( Q2, Q )
+
+    # repeat all tests with vertex_refine = TRUE, which requires delta and I in all cases!
+    Q2 <- update_Q( ThetaSR, L2, R, delta, I, vertex_refine = TRUE )
+    validate_Q( Q2, n, K )
+    Q2 <- update_Q( ThetaSR, L, R, 0, I, vertex_refine = TRUE )
+    expect_equal( Q2, Q )
+    Q2 <- update_Q( ThetaSR, L2, R, 0, I, algorithm = 'nnls', vertex_refine = TRUE )
+    validate_Q( Q2, n, K )
+    Q2 <- update_Q( ThetaSR, L, R, 0, I, algorithm = 'nnls', vertex_refine = TRUE )
+    expect_equal( Q2, Q )
+    Q2 <- update_Q( ThetaSR, L2, R, 0, I, algorithm = 'bvls', vertex_refine = TRUE )
+    validate_Q( Q2, n, K )
+    Q2 <- update_Q( ThetaSR, L, R, 0, I, algorithm = 'bvls', vertex_refine = TRUE )
+    expect_equal( Q2, Q )
+    Q2 <- update_Q( ThetaSR, L2, R, delta, I, algorithm = 'glmnet', vertex_refine = TRUE )
+    validate_Q( Q2, n, K )
+    Q2 <- update_Q( ThetaSR, L, R, 0, I, algorithm = 'glmnet', vertex_refine = TRUE )
+    expect_equal( Q2, Q )
+    Q2 <- update_Q( ThetaSR, L2, R, delta, I, algorithm = 'quadprog', vertex_refine = TRUE )
+    validate_Q( Q2, n, K )
+    Q2 <- update_Q( ThetaSR, L, R, 0, I, algorithm = 'quadprog', vertex_refine = TRUE )
+    expect_equal( Q2, Q )
+    Q2 <- update_Q( ThetaSR, L2, R, delta, I, algorithm = 'quadprog-compact', vertex_refine = TRUE )
+    validate_Q( Q2, n, K )
+    Q2 <- update_Q( ThetaSR, L, R, 0, I, algorithm = 'quadprog-compact', vertex_refine = TRUE )
+    expect_equal( Q2, Q )
 })
-
-
 
 test_that( 'admixcor works', {
     # for this test, we don't have to fully converge (even in toy data it sometimes takes too long)
@@ -410,4 +460,30 @@ test_that( 'admixcor works', {
         obj <- admixcor( Theta, K, tol = tol, Q_algorithm = 'quadprog-compact' )
     )
     validate_admixcor( obj, n, K )
+    # repeat with `vertex_refine = TRUE`
+    expect_silent(
+        obj <- admixcor( Theta, K, tol = tol, vertex_refine = TRUE )
+    )
+    validate_admixcor( obj, n, K )
+    expect_silent(
+        obj <- admixcor( Theta, K, tol = tol, Q_algorithm = 'nnls', vertex_refine = TRUE )
+    )
+    validate_admixcor( obj, n, K )
+    expect_silent(
+        obj <- admixcor( Theta, K, tol = tol, Q_algorithm = 'bvls', vertex_refine = TRUE )
+    )
+    validate_admixcor( obj, n, K )
+    expect_silent(
+        obj <- admixcor( Theta, K, tol = tol, Q_algorithm = 'glmnet', vertex_refine = TRUE )
+    )
+    validate_admixcor( obj, n, K )
+    expect_silent(
+        obj <- admixcor( Theta, K, tol = tol, Q_algorithm = 'quadprog', vertex_refine = TRUE )
+    )
+    validate_admixcor( obj, n, K )
+    expect_silent(
+        obj <- admixcor( Theta, K, tol = tol, Q_algorithm = 'quadprog-compact', vertex_refine = TRUE )
+    )
+    validate_admixcor( obj, n, K )
+
 })
