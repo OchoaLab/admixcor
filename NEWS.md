@@ -63,3 +63,10 @@ Non-code updates:
 # admixcor 0.0.10.9000 (2024-06-23)
 
 - Function `admixcor` added option `vertex_refine`, which when `TRUE` (not default) explicitly tests vertices (all K unadmixed cases) for every individual, keeping the best if it improves upon previous solution at every update-Q iteration.
+
+# admixcor 0.0.11.9000 (2024-07-01)
+
+- Function `admixcor` added hack for `delta = 0` and `Q_algorithm %in% c('quadprog' 'quadprog-compact')` only, makes sure Psi is positive definite by ensuring that the internal L has diagonal values above 1e-7.  Before, especially if `gamma >= 1e-4`, could encounter these fatal errors:
+  - Error in `quadprog::solve.QP(D, d, C, c, meq)`: matrix D in quadratic function is not positive definite!
+  - Error in `quadprog::solve.QP.compact(D, d, Cmat, Cind, c, meq)`: matrix D in quadratic function is not positive definite!
+- Internal: rearranged tests to see how often vertex-refine actually improved solutions (in a single step, always; but after a full round of iterations not often, those were commented out).  Also added comments on some common failures that 

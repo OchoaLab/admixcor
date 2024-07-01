@@ -45,9 +45,17 @@ update_Q <- function( ThetaSR, L, R, delta, I, algorithm = c('original', 'nnls',
         Q <- matrix( 0, n, K )
         if ( algorithm == 'quadprog' || algorithm == 'quadprog-compact' || vertex_refine ) {
             # calculate some matrices shared by all individuals
-            # NOTE: delta shoulds be 1/2 I think!!! (to agree with our standard objective)
             #D <- crossprod( A ) + delta * I # equivalent to below
             D <- tcrossprod( L ) + delta * I
+            # hack-correct D if needed, a minimal alteration so we don't have to repeat runs that previously succeeded
+            if ( delta == 0 ) {
+                eps <- 1e-7 # sqrt( .Machine$double.eps )
+                indexes <- diag( D ) < eps
+                if ( any( indexes ) ) {
+                    # set things that are too small to the smallest non-zero value that is guaranteed to pass (make D posdef)
+                    diag( D )[ indexes ] <- eps
+                }
+            }
             # build constraint matrix (called Amat in solve.QP)
             # NOTE: these are the same across iterations so could be built outside loop to make more efficient!
             if ( algorithm == 'quadprog' ) {
