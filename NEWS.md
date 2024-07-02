@@ -70,3 +70,7 @@ Non-code updates:
   - Error in `quadprog::solve.QP(D, d, C, c, meq)`: matrix D in quadratic function is not positive definite!
   - Error in `quadprog::solve.QP.compact(D, d, Cmat, Cind, c, meq)`: matrix D in quadratic function is not positive definite!
 - Internal: rearranged tests to see how often vertex-refine actually improved solutions (in a single step, always; but after a full round of iterations not often, those were commented out).  Also added comments on somewhat common failures that I haven't fixed yet
+
+# admixcor 0.0.12.9000 (2024-07-01)
+
+- Function `admixcor` increased minimum diagonal L value from 1e-7 to 1e-6 (there were still many problems on cluster runs)
