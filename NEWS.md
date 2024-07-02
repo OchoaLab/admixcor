@@ -86,3 +86,7 @@ Non-code updates:
 # admixcor 0.0.15.9000 (2024-07-02)
 
 - Function `admixcor` increased minimum diagonal L value again, from 1e-4 to 1e-3 (there were still many problems on cluster runs)
+
+# admixcor 0.0.16.9000 (2024-07-02)
+
+- Function `admixcor` increased minimum diagonal L value again, from 1e-3 to 1e-2 (there were still many problems on cluster runs)
