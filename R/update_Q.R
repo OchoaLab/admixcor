@@ -49,7 +49,7 @@ update_Q <- function( ThetaSR, L, R, delta, I, algorithm = c('original', 'nnls',
             D <- tcrossprod( L ) + delta * I
             # hack-correct D if needed, a minimal alteration so we don't have to repeat runs that previously succeeded
             if ( delta == 0 ) {
-                eps <- 1e-4 # sqrt( .Machine$double.eps )
+                eps <- 1e-3 # sqrt( .Machine$double.eps )
                 indexes <- diag( D ) < eps
                 if ( any( indexes ) ) {
                     # set things that are too small to the smallest non-zero value that is guaranteed to pass (make D posdef)
