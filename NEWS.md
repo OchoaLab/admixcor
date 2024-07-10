@@ -90,3 +90,7 @@ Non-code updates:
 # admixcor 0.0.16.9000 (2024-07-02)
 
 - Function `admixcor` increased minimum diagonal L value again, from 1e-3 to 1e-2 (there were still many problems on cluster runs)
+
+# admixcor 0.0.17.9000 (2024-07-10)
+
+- Function `admixcor` removed `Q_algorithm` cases `nnls`, `bvls`, `glmnet`, and `quadprog-compact`; in other words, only `quadprog` and `original` remain.

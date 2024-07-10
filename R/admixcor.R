@@ -6,7 +6,7 @@ admixcor <- function(
                      delta = 0,
                      Q_type = c('kmeans', 'random', 'uniform'),
                      L_type = c('identity', 'uniform', 'diagrandom', 'random'),
-                     Q_algorithm = c('original', 'nnls', 'bvls', 'glmnet', 'quadprog', 'quadprog-compact'),
+                     Q_algorithm = c('original', 'quadprog'),
                      L_algorithm = c('glmnet', 'bvls'),
                      vertex_refine = FALSE,
                      tol = sqrt( .Machine$double.eps ), # 1e-15

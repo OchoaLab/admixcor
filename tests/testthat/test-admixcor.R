@@ -328,46 +328,7 @@ test_that( 'update_Q works', {
     expect_equal( Q2v, Q )
     # if these are all equal, then the objectives are equal (no need to test directly)
 
-    # test new version based on nnls, repeating both earlier tests
-    # here it's fine to exclude delta and I
-    Q2 <- update_Q( ThetaSR, L2, R, algorithm = 'nnls' )
-    validate_Q( Q2, n, K )
-    # repeat all tests with vertex_refine = TRUE, which requires delta and I in all cases!
-    Q2v <- update_Q( ThetaSR, L2, R, 0, I, algorithm = 'nnls', vertex_refine = TRUE )
-    validate_Q( Q2v, n, K )
-    validate_vertex_refine( ThetaSR, Q2, Q2v, L2, R, gamma, delta = 0 )
-    Q2 <- update_Q( ThetaSR, L, R, algorithm = 'nnls' )
-    expect_equal( Q2, Q )
-    # repeat all tests with vertex_refine = TRUE, which requires delta and I in all cases!
-    Q2v <- update_Q( ThetaSR, L, R, 0, I, algorithm = 'nnls', vertex_refine = TRUE )
-    expect_equal( Q2v, Q )
-
-    # ditto bvls
-    Q2 <- update_Q( ThetaSR, L2, R, algorithm = 'bvls' )
-    validate_Q( Q2, n, K )
-    # repeat all tests with vertex_refine = TRUE, which requires delta and I in all cases!
-    Q2v <- update_Q( ThetaSR, L2, R, 0, I, algorithm = 'bvls', vertex_refine = TRUE )
-    validate_Q( Q2v, n, K )
-    validate_vertex_refine( ThetaSR, Q2, Q2v, L2, R, gamma, delta = 0 )
-    Q2 <- update_Q( ThetaSR, L, R, algorithm = 'bvls' )
-    expect_equal( Q2, Q )
-    # repeat all tests with vertex_refine = TRUE, which requires delta and I in all cases!
-    Q2v <- update_Q( ThetaSR, L, R, 0, I, algorithm = 'bvls', vertex_refine = TRUE )
-    expect_equal( Q2v, Q )
-
-    # ditto glmnet
-    Q2 <- update_Q( ThetaSR, L2, R, delta, I, algorithm = 'glmnet' )
-    validate_Q( Q2, n, K )
-    Q2v <- update_Q( ThetaSR, L2, R, delta, I, algorithm = 'glmnet', vertex_refine = TRUE )
-    validate_Q( Q2v, n, K )
-    validate_vertex_refine( ThetaSR, Q2, Q2v, L2, R, gamma, delta )
-    # can only recover true solution if we don't penalize!
-    Q2 <- update_Q( ThetaSR, L, R, 0, I, algorithm = 'glmnet' )
-    expect_equal( Q2, Q )
-    Q2v <- update_Q( ThetaSR, L, R, 0, I, algorithm = 'glmnet', vertex_refine = TRUE )
-    expect_equal( Q2v, Q )
-
-    # ditto quadprog
+    # test new version based on quadprog, repeating both earlier tests
     Q2 <- update_Q( ThetaSR, L2, R, delta, I, algorithm = 'quadprog' )
     validate_Q( Q2, n, K )
     Q2v <- update_Q( ThetaSR, L2, R, delta, I, algorithm = 'quadprog', vertex_refine = TRUE )
@@ -377,18 +338,6 @@ test_that( 'update_Q works', {
     Q2 <- update_Q( ThetaSR, L, R, 0, I, algorithm = 'quadprog' )
     expect_equal( Q2, Q )
     Q2v <- update_Q( ThetaSR, L, R, 0, I, algorithm = 'quadprog', vertex_refine = TRUE )
-    expect_equal( Q2v, Q )
-
-    # ditto compact version of quadprog
-    Q2 <- update_Q( ThetaSR, L2, R, delta, I, algorithm = 'quadprog-compact' )
-    validate_Q( Q2, n, K )
-    Q2v <- update_Q( ThetaSR, L2, R, delta, I, algorithm = 'quadprog-compact', vertex_refine = TRUE )
-    validate_Q( Q2v, n, K )
-    validate_vertex_refine( ThetaSR, Q2, Q2v, L2, R, gamma, delta )
-    # can only recover true solution if we don't penalize!
-    Q2 <- update_Q( ThetaSR, L, R, 0, I, algorithm = 'quadprog-compact' )
-    expect_equal( Q2, Q )
-    Q2v <- update_Q( ThetaSR, L, R, 0, I, algorithm = 'quadprog-compact', vertex_refine = TRUE )
     expect_equal( Q2v, Q )
 })
 
@@ -447,11 +396,13 @@ test_that( 'admixcor works', {
     )
     validate_admixcor( obj, n, K )
     # TODO: `maxPsi` (`actual`) not equal to 1 (`expected`).
+    # TODO: max(L) <= 1 is not TRUE
     expect_silent(
         obj <- admixcor( Theta, K, tol = tol, Q_type = 'uniform', gamma = 0, delta = 0 )
     )
     validate_admixcor( obj, n, K )
     # TODO: `maxPsi` (`actual`) not equal to 1 (`expected`).
+    # TODO: max(L) <= 1 is not TRUE
 
     # ditto L initializations, try non-default versions now (identity is default)
     # test in context of Q_type = 'kmeans' only
@@ -469,6 +420,7 @@ test_that( 'admixcor works', {
         obj <- admixcor( Theta, K, tol = tol, L_type = 'random' )
     )
     validate_admixcor( obj, n, K )
+    # TODO: `maxPsi` (`actual`) not equal to 1 (`expected`).
 
     # and L algorithms!
     expect_silent(
@@ -478,43 +430,6 @@ test_that( 'admixcor works', {
     # TODO: `maxPsi` (`actual`) not equal to 1 (`expected`).
 
     # and Q algorithms!
-    expect_silent(
-        obj <- admixcor( Theta, K, tol = tol, Q_algorithm = 'nnls' )
-    )
-    validate_admixcor( obj, n, K )
-    # TODO: max(L) <= 1 is not TRUE
-    # TODO: `maxPsi` (`actual`) not equal to 1 (`expected`).
-    expect_silent(
-        objv <- admixcor( Theta, K, tol = tol, Q_algorithm = 'nnls', vertex_refine = TRUE )
-    )
-    validate_admixcor( objv, n, K )
-    ## if ( objv$f > obj$f )
-    ##     message( objv$f, ' > ', obj$f )
-    ## expect_true( objv$f <= obj$f ) # TODO FAILED x3
-    expect_silent(
-        obj <- admixcor( Theta, K, tol = tol, Q_algorithm = 'bvls' )
-    )
-    validate_admixcor( obj, n, K )
-    # TODO: max(L) <= 1 is not TRUE
-    expect_silent(
-        objv <- admixcor( Theta, K, tol = tol, Q_algorithm = 'bvls', vertex_refine = TRUE )
-    )
-    validate_admixcor( objv, n, K )
-    ## if ( objv$f > obj$f )
-    ##     message( objv$f, ' > ', obj$f )
-    ## expect_true( objv$f <= obj$f ) # TODO FAILED x6
-    expect_silent(
-        obj <- admixcor( Theta, K, tol = tol, Q_algorithm = 'glmnet' )
-    )
-    validate_admixcor( obj, n, K )
-    expect_silent(
-        objv <- admixcor( Theta, K, tol = tol, Q_algorithm = 'glmnet', vertex_refine = TRUE )
-    )
-    validate_admixcor( objv, n, K )
-    # TODO: `maxPsi` (`actual`) not equal to 1 (`expected`).
-    ## if ( objv$f > obj$f )
-    ##     message( objv$f, ' > ', obj$f )
-    ## expect_true( objv$f <= obj$f ) # TODO FAILED x2
     expect_silent(
         obj <- admixcor( Theta, K, tol = tol, Q_algorithm = 'quadprog' )
     )
@@ -526,15 +441,4 @@ test_that( 'admixcor works', {
     ## if ( objv$f > obj$f )
     ##     message( objv$f, ' > ', obj$f )
     ## expect_true( objv$f <= obj$f ) # TODO FAILED x1
-    expect_silent(
-        obj <- admixcor( Theta, K, tol = tol, Q_algorithm = 'quadprog-compact' )
-    )
-    validate_admixcor( obj, n, K )
-    expect_silent(
-        objv <- admixcor( Theta, K, tol = tol, Q_algorithm = 'quadprog-compact', vertex_refine = TRUE )
-    )
-    validate_admixcor( objv, n, K )
-    ## if ( objv$f > obj$f )
-    ##     message( objv$f, ' > ', obj$f )
-    ## expect_true( objv$f <= obj$f ) # TODO FAILED x3
 })
