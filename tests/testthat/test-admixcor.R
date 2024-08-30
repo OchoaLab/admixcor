@@ -13,6 +13,7 @@ Psi <- diag( runif( K ), K )
 # create a Theta that goes with these matrices
 Theta <- tcrossprod( Q %*% Psi, Q )
 # some default values for the regularization parameters
+alpha <- 0.01
 gamma <- 0.01
 delta <- 0.01
 # constant used in regularized expressions
@@ -63,6 +64,21 @@ validate_L <- function( L, K ) {
     maxPsi <- max( Psi )
     if ( maxPsi < 1 ) maxPsi <- 1
     expect_equal( maxPsi, 1 )
+}
+
+# validates dimensions, non-negativity, and Psi <= 1
+validate_Psi <- function( Psi, K ) {
+    expect_true( is.matrix( Psi ) )
+    expect_equal( nrow( Psi ), K )
+    expect_equal( ncol( Psi ), K )
+    expect_true( min( Psi ) >= 0 )
+    expect_true( max( Psi ) <= 1 )
+    # for more accurate validations, check its full Psi
+    # weird way to test this inequality but with tolerance
+    ## expect_true( max( Psi ) <= 1 )
+    ## maxPsi <- max( Psi )
+    ## if ( maxPsi < 1 ) maxPsi <- 1
+    ## expect_equal( maxPsi, 1 )
 }
 
 # uniform testing for all cases
@@ -274,6 +290,27 @@ test_that( 'update_L works', {
     # TODO x4: `maxPsi` (`actual`) not equal to 1 (`expected`).
     L2 <- update_L( ThetaSR, Q, R, algorithm = 'bvls' )
     expect_equal( L2, L )
+})
+
+test_that( 'update_Psi works', {
+    # test the default glmnet first...
+    
+    # test on random data first, make sure it doesn't break; all are globally set
+    # here we use true Theta, but random Q for test
+    Psi2 <- update_Psi( Theta, Q2, alpha )
+    # test basic expectations
+    validate_Psi( Psi2, K )
+
+    # now try exact solution (true Theta and Q), here it is recoverable in theory if we don't penalize!
+    Psi2 <- update_Psi( Theta, Q, 0 )
+    expect_equal( Psi2, Psi )
+
+    # test bvls version (requires zero alpha), repeating both earlier tests
+    Psi2 <- update_Psi( Theta, Q2, algorithm = 'bvls' )
+    validate_Psi( Psi2, K )
+    # TODO x4: `maxPsi` (`actual`) not equal to 1 (`expected`).
+    Psi2 <- update_Psi( Theta, Q, algorithm = 'bvls' )
+    expect_equal( Psi2, Psi )
 })
 
 test_that( "obj_quadprog works", {
