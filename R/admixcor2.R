@@ -30,8 +30,7 @@ admixcor2 <- function(
     # normalize gamma to be on a more similar scale to delta, etc
     # takes into account that dim(L) = (K, K) is much smaller than dim(Q) = dim(ThetaSR) = (n, K)
     gamma <- gamma * n / K
-    alpha = gamma
-    beta = delta
+    alpha <- alpha * n / K
 
     # initialize other variables
     Vars <- initialize( ThetaSR, K, n, Q_type, L_type )
