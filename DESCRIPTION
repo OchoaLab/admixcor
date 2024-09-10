@@ -1,6 +1,6 @@
 Package: admixcor
 Title: Estimate Admixture from Correlations
-Version: 0.0.17.9000
+Version: 0.0.18.9000
 Authors@R: c(
     person(given = "Alejandro",
 	   family = "Ochoa",

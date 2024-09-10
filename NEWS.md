@@ -94,3 +94,8 @@ Non-code updates:
 # admixcor 0.0.17.9000 (2024-07-10)
 
 - Function `admixcor` removed `Q_algorithm` cases `nnls`, `bvls`, `glmnet`, and `quadprog-compact`; in other words, only `quadprog` and `original` remain.
+
+# admixcor 0.0.18.9000 (2024-09-09)
+
+- Added functions `admixcor2` and `objective2`, which are based on optimizing `Psi` directly from the original objective (the previous `admixcor` and `objective` were based on the same "linearized" or "square root" objective used to optimize `Q`)
+- Function `admixcor` added option `fix_L` that may fix a bug regarding the orientation of the internal `L` matrix (it appeared to be inconsistently transposed in certain steps).

@@ -12,10 +12,11 @@ Q2 <- Q2 / rowSums( Q2 ) # normalize as they should be
 Psi <- diag( runif( K ), K )
 # create a Theta that goes with these matrices
 Theta <- tcrossprod( Q %*% Psi, Q )
-# some default values for the regularization parameters
-alpha <- 0.01
-gamma <- 0.01
-delta <- 0.01
+# some default values for the regularization parameters; light regularization is ideal
+alpha <- 1e-5
+beta <- 1e-5
+gamma <- 1e-5
+delta <- 1e-5
 # constant used in regularized expressions
 I <- diag( 1, K, K )
 # a random quanitity for quadcomp tests
@@ -47,14 +48,18 @@ validate_R <- function( R, K, I ) {
 }
 
 # validates dimensions, non-negativity, Cholesky form, and implied Psi <= 1
-validate_L <- function( L, K ) {
+validate_L <- function( L, K, fix_L = FALSE ) {
     expect_true( is.matrix( L ) )
     expect_equal( nrow( L ), K )
     expect_equal( ncol( L ), K )
     expect_true( min( L ) >= 0 )
     expect_true( max( L ) <= 1 )
     # demand that lower triangle is zero! (excludes diagonal)
-    expect_true( all( L[ lower.tri( L ) ] == 0 ) )
+    if ( fix_L ) {
+        expect_true( all( L[ upper.tri( L ) ] == 0 ) )
+    } else {
+        expect_true( all( L[ lower.tri( L ) ] == 0 ) )
+    }
     # for more accurate validations, check its full Psi
     Psi <- tcrossprod( L )
     #expect_true( min( Psi ) >= 0 ) # implied by earlier test
@@ -82,20 +87,25 @@ validate_Psi <- function( Psi, K ) {
 }
 
 # uniform testing for all cases
-validate_initialize <- function( obj, n, K ) {
+validate_initialize <- function( obj, n, K, fix_L = FALSE ) {
     expect_true( is.list( obj ) )
     expect_equal( names( obj ), c('Q', 'L', 'R') )
     validate_Q( obj$Q, n, K )
     validate_R( obj$R, K, I )
-    validate_L( obj$L, K )
+    validate_L( obj$L, K, fix_L = fix_L )
 }
 
 # uniform testing for all cases
-validate_admixcor <- function( obj, n, K ) {
+validate_admixcor <- function( obj, n, K, fix_L = FALSE, v = 1 ) {
     expect_true( is.list( obj ) )
-    expect_equal( names( obj ), c('Q', 'Psi', 'f', 'report', 'ThetaSR', 'L', 'R') )
+    if ( v == 1 ) {
+        expect_equal( names( obj ), c('Q', 'Psi', 'f', 'report', 'ThetaSR', 'L', 'R') )
+    } else {
+        expect_equal( names( obj ), c('Q', 'Psi', 'f', 'report', 'ThetaSR', 'R') )
+    }
     validate_Q( obj$Q, n, K )
-    validate_L( obj$L, K )
+    if ( v == 1 )
+        validate_L( obj$L, K, fix_L = fix_L )
     validate_R( obj$R, K, I )
     # NOTE: we're not validating ThetaSR, that's ok, it's simple and not a worry (it was validated earlier)
     expect_true( is.matrix( obj$Psi ) )
@@ -111,6 +121,15 @@ validate_admixcor <- function( obj, n, K ) {
 }
 
 ### TESTS
+
+test_that( '`L = t(chol(Psi))` inverts `Psi = tcrossprod(L)`', {
+    # our Psi is diagonal/boring, and Theta is not full rank, so create a fake but interesting and full-rank Psi here instead
+    Psi <- crossprod( matrix( rnorm( K^2 ), K, K ) )
+    expect_silent(
+        L <- t( chol( Psi ) )
+    )
+    expect_equal( tcrossprod( L ), Psi )
+})
 
 test_that( 'rmsd_Q works', {
     expect_silent(
@@ -176,7 +195,7 @@ R <- solve( L ) %*% MASS::ginv( Q ) %*% ThetaSR
 # also create a random L used for tests, copying code from initialize.R with `L_type == 'random'`
 L2 <- matrix( runif( K^2 ), K, K ) / sqrt(K)
 # ensure this is like cholesky
-L2[ lower.tri( L2 ) ] <- 0
+L2[ upper.tri( L2 ) ] <- 0
 
 
 test_that( 'objective works', {
@@ -289,6 +308,16 @@ test_that( 'update_L works', {
     validate_L( L2, K )
     # TODO x4: `maxPsi` (`actual`) not equal to 1 (`expected`).
     L2 <- update_L( ThetaSR, Q, R, algorithm = 'bvls' )
+    expect_equal( L2, L )
+
+    # repeat tests with `fix_L = TRUE`
+    L2 <- update_L( ThetaSR, Q2, R, gamma, fix_L = TRUE )
+    validate_L( L2, K, fix_L = TRUE )
+    L2 <- update_L( ThetaSR, Q, R, 0, fix_L = TRUE )
+    expect_equal( L2, L )
+    L2 <- update_L( ThetaSR, Q2, R, algorithm = 'bvls', fix_L = TRUE )
+    validate_L( L2, K, fix_L = TRUE )
+    L2 <- update_L( ThetaSR, Q, R, algorithm = 'bvls', fix_L = TRUE )
     expect_equal( L2, L )
 })
 
@@ -478,4 +507,149 @@ test_that( 'admixcor works', {
     ## if ( objv$f > obj$f )
     ##     message( objv$f, ' > ', obj$f )
     ## expect_true( objv$f <= obj$f ) # TODO FAILED x1
+
+    # repeat every previous test with `fix_L = TRUE`
+    expect_silent(
+        obj <- admixcor( Theta, K, tol = tol, fix_L = TRUE )
+    )
+    validate_admixcor( obj, n, K, fix_L = TRUE )
+    expect_silent(
+        objv <- admixcor( Theta, K, tol = tol, vertex_refine = TRUE, fix_L = TRUE )
+    )
+    validate_admixcor( objv, n, K, fix_L = TRUE )
+    expect_silent(
+        obj <- admixcor( Theta, K, tol = tol, gamma = 0, fix_L = TRUE )
+    )
+    validate_admixcor( obj, n, K, fix_L = TRUE )
+    expect_silent(
+        obj <- admixcor( Theta, K, tol = tol, delta = 0, fix_L = TRUE )
+    )
+    validate_admixcor( obj, n, K, fix_L = TRUE )
+    expect_silent(
+        obj <- admixcor( Theta, K, tol = tol, gamma = 0, delta = 0, fix_L = TRUE )
+    )
+    validate_admixcor( obj, n, K, fix_L = TRUE )
+    expect_silent(
+        obj <- admixcor( Theta, K, tol = tol, Q_type = 'random', fix_L = TRUE )
+    )
+    validate_admixcor( obj, n, K, fix_L = TRUE )
+    expect_silent(
+        obj <- admixcor( Theta, K, tol = tol, Q_type = 'random', gamma = 0, delta = 0, fix_L = TRUE )
+    )
+    validate_admixcor( obj, n, K, fix_L = TRUE )
+    expect_silent(
+        obj <- admixcor( Theta, K, tol = tol, Q_type = 'uniform', fix_L = TRUE )
+    )
+    validate_admixcor( obj, n, K, fix_L = TRUE )
+    expect_silent(
+        obj <- admixcor( Theta, K, tol = tol, Q_type = 'uniform', gamma = 0, delta = 0, fix_L = TRUE )
+    )
+    validate_admixcor( obj, n, K, fix_L = TRUE )
+    expect_silent(
+        obj <- admixcor( Theta, K, tol = tol, L_type = 'uniform', fix_L = TRUE )
+    )
+    validate_admixcor( obj, n, K, fix_L = TRUE )
+    expect_silent(
+        obj <- admixcor( Theta, K, tol = tol, L_type = 'diagrandom', fix_L = TRUE )
+    )
+    validate_admixcor( obj, n, K, fix_L = TRUE )
+    expect_silent(
+        obj <- admixcor( Theta, K, tol = tol, L_type = 'random', fix_L = TRUE )
+    )
+    validate_admixcor( obj, n, K, fix_L = TRUE )
+    expect_silent(
+        obj <- admixcor( Theta, K, tol = tol, L_algorithm = 'bvls', fix_L = TRUE )
+    )
+    validate_admixcor( obj, n, K, fix_L = TRUE )
+    expect_silent(
+        obj <- admixcor( Theta, K, tol = tol, Q_algorithm = 'quadprog', fix_L = TRUE )
+    )
+    validate_admixcor( obj, n, K, fix_L = TRUE )
+    expect_silent(
+        objv <- admixcor( Theta, K, tol = tol, Q_algorithm = 'quadprog', vertex_refine = TRUE, fix_L = TRUE )
+    )
+    validate_admixcor( objv, n, K, fix_L = TRUE )
+})
+
+test_that( 'admixcor2 works', {
+    # for this test, we don't have to fully converge (even in toy data it sometimes takes too long)
+    # this stops in a single iteration in tests!
+    tol <- 1e-2 # default ~1e-8
+    # first test default version with no regularization
+    expect_silent(
+        obj <- admixcor2( Theta, K, tol = tol )
+    )
+    validate_admixcor( obj, n, K, v = 2 )
+    expect_silent(
+        objv <- admixcor2( Theta, K, tol = tol, vertex_refine = TRUE )
+    )
+    # TODO: Error in `chol.default(Psi1)`: the leading minor of order 3 is not positive
+    validate_admixcor( objv, n, K, v = 2 )
+    
+    # now test regularized versions
+    expect_silent(
+        obj <- admixcor2( Theta, K, tol = tol, alpha = alpha )
+    )
+    validate_admixcor( obj, n, K, v = 2 )
+    expect_silent(
+        obj <- admixcor2( Theta, K, tol = tol, beta = beta )
+    )
+    validate_admixcor( obj, n, K, v = 2 )
+    expect_silent(
+        obj <- admixcor2( Theta, K, tol = tol, alpha = alpha, beta = beta )
+    )
+    validate_admixcor( obj, n, K, v = 2 )
+
+    # all of those earlier cases were default Q initialization using kmeans, try other non-default cases
+    # test default unregularized version and regularized, to catch edge cases potentially
+    expect_silent(
+        obj <- admixcor2( Theta, K, tol = tol, Q_type = 'random' )
+    )
+    validate_admixcor( obj, n, K, v = 2 )
+    expect_silent(
+        obj <- admixcor2( Theta, K, tol = tol, Q_type = 'random', alpha = alpha, beta = beta )
+    )
+    validate_admixcor( obj, n, K, v = 2 )
+    # NOTE: admixcor2 really doesn't like `Q_type = 'uniform'`, it fails regularly with codes like these (both with and without regularization):
+    # - Error: from glmnet C++ code (error code 7777); All used predictors have zero variance
+    ## expect_silent(
+    ##     obj <- admixcor2( Theta, K, tol = tol, Q_type = 'uniform' )
+    ## )
+    ## validate_admixcor( obj, n, K, v = 2 )
+    ## expect_silent(
+    ##     obj <- admixcor2( Theta, K, tol = tol, Q_type = 'uniform', alpha = alpha, beta = beta )
+    ## )
+    ## validate_admixcor( obj, n, K, v = 2 )
+
+    # ditto L initializations, try non-default versions now (identity is default)
+    # test in context of Q_type = 'kmeans' only
+    # in this case didn't test unregularized edge cases, but meh, will do if there is a clear need later
+    expect_silent(
+        obj <- admixcor2( Theta, K, tol = tol, L_type = 'uniform' )
+    )
+    validate_admixcor( obj, n, K, v = 2 )
+    expect_silent(
+        obj <- admixcor2( Theta, K, tol = tol, L_type = 'diagrandom' )
+    )
+    validate_admixcor( obj, n, K, v = 2 )
+    expect_silent(
+        obj <- admixcor2( Theta, K, tol = tol, L_type = 'random' )
+    )
+    validate_admixcor( obj, n, K, v = 2 )
+
+    # and Psi algorithms!
+    expect_silent(
+        obj <- admixcor2( Theta, K, tol = tol, Psi_algorithm = 'bvls' )
+    )
+    validate_admixcor( obj, n, K, v = 2 )
+
+    # and Q algorithms!
+    expect_silent(
+        obj <- admixcor2( Theta, K, tol = tol, Q_algorithm = 'quadprog' )
+    )
+    validate_admixcor( obj, n, K, v = 2 )
+    expect_silent(
+        objv <- admixcor2( Theta, K, tol = tol, Q_algorithm = 'quadprog', vertex_refine = TRUE )
+    )
+    validate_admixcor( objv, n, K, v = 2 )
 })
