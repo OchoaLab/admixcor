@@ -653,3 +653,86 @@ test_that( 'admixcor2 works', {
     )
     validate_admixcor( objv, n, K, v = 2 )
 })
+
+test_that( 'admixcor2 reformed works', {
+    # for this test, we don't have to fully converge (even in toy data it sometimes takes too long)
+    # this stops in a single iteration in tests!
+    tol <- 1e-2 # default ~1e-8
+    # first test default version with no regularization
+    expect_silent(
+        obj <- admixcor2( Theta, K, tol = tol, reformed = TRUE )
+    )
+    validate_admixcor( obj, n, K, v = 2 )
+    expect_silent(
+        objv <- admixcor2( Theta, K, tol = tol, reformed = TRUE, vertex_refine = TRUE )
+    )
+    # TODO: Error in `chol.default(Psi1)`: the leading minor of order 3 is not positive
+    validate_admixcor( objv, n, K, v = 2 )
+    
+    # now test regularized versions
+    expect_silent(
+        obj <- admixcor2( Theta, K, tol = tol, reformed = TRUE, alpha = alpha )
+    )
+    validate_admixcor( obj, n, K, v = 2 )
+    expect_silent(
+        obj <- admixcor2( Theta, K, tol = tol, reformed = TRUE, beta = beta )
+    )
+    validate_admixcor( obj, n, K, v = 2 )
+    expect_silent(
+        obj <- admixcor2( Theta, K, tol = tol, reformed = TRUE, alpha = alpha, beta = beta )
+    )
+    validate_admixcor( obj, n, K, v = 2 )
+
+    # all of those earlier cases were default Q initialization using kmeans, try other non-default cases
+    # test default unregularized version and regularized, to catch edge cases potentially
+    expect_silent(
+        obj <- admixcor2( Theta, K, tol = tol, reformed = TRUE, Q_type = 'random' )
+    )
+    validate_admixcor( obj, n, K, v = 2 )
+    expect_silent(
+        obj <- admixcor2( Theta, K, tol = tol, reformed = TRUE, Q_type = 'random', alpha = alpha, beta = beta )
+    )
+    validate_admixcor( obj, n, K, v = 2 )
+    # NOTE: admixcor2 really doesn't like `Q_type = 'uniform'`, it fails regularly with codes like these (both with and without regularization):
+    # - Error: from glmnet C++ code (error code 7777); All used predictors have zero variance
+    ## expect_silent(
+    ##     obj <- admixcor2( Theta, K, tol = tol, reformed = TRUE, Q_type = 'uniform' )
+    ## )
+    ## validate_admixcor( obj, n, K, v = 2 )
+    ## expect_silent(
+    ##     obj <- admixcor2( Theta, K, tol = tol, reformed = TRUE, Q_type = 'uniform', alpha = alpha, beta = beta )
+    ## )
+    ## validate_admixcor( obj, n, K, v = 2 )
+
+    # ditto L initializations, try non-default versions now (identity is default)
+    # test in context of Q_type = 'kmeans' only
+    # in this case didn't test unregularized edge cases, but meh, will do if there is a clear need later
+    expect_silent(
+        obj <- admixcor2( Theta, K, tol = tol, reformed = TRUE, L_type = 'uniform' )
+    )
+    validate_admixcor( obj, n, K, v = 2 )
+    expect_silent(
+        obj <- admixcor2( Theta, K, tol = tol, reformed = TRUE, L_type = 'diagrandom' )
+    )
+    validate_admixcor( obj, n, K, v = 2 )
+    expect_silent(
+        obj <- admixcor2( Theta, K, tol = tol, reformed = TRUE, L_type = 'random' )
+    )
+    validate_admixcor( obj, n, K, v = 2 )
+
+    # and Psi algorithms!
+    expect_silent(
+        obj <- admixcor2( Theta, K, tol = tol, reformed = TRUE, Psi_algorithm = 'bvls' )
+    )
+    validate_admixcor( obj, n, K, v = 2 )
+
+    # and Q algorithms!
+    expect_silent(
+        obj <- admixcor2( Theta, K, tol = tol, reformed = TRUE, Q_algorithm = 'quadprog' )
+    )
+    validate_admixcor( obj, n, K, v = 2 )
+    expect_silent(
+        objv <- admixcor2( Theta, K, tol = tol, reformed = TRUE, Q_algorithm = 'quadprog', vertex_refine = TRUE )
+    )
+    validate_admixcor( objv, n, K, v = 2 )
+})
