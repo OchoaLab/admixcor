@@ -12,6 +12,7 @@ admixcor2 <- function(
                      Psi_algorithm = c('glmnet', 'bvls'),
                      vertex_refine = FALSE,
                      tol = sqrt( .Machine$double.eps ), # 1e-15
+		     tol_psi = sqrt( .Machine$double.eps ), # 1e-15
                      nstep_max = 100000,
                      report_freq = 1000,
 		     reformed = FALSE
@@ -72,6 +73,7 @@ admixcor2 <- function(
         
         # apply the updates, one at the time
 	Psi1 <- update_Psi( Theta, Q0, alpha, algorithm = Psi_algorithm )
+        Psi1 <- positive_definite( Psi1, tol_psi, K)
         L1 <- t(chol( Psi1 ) )
         R1 <- update_R( ThetaSR, Q0, L1 )
         Q1 <- update_Q( ThetaSR, L1, R1, delta, I, algorithm = Q_algorithm, vertex_refine = vertex_refine )
