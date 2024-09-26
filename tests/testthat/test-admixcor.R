@@ -407,6 +407,29 @@ test_that( 'update_Q works', {
     expect_equal( Q2v, Q )
 })
 
+test_that( 'positive_definite works', {
+    # across iterations, we encountered cases for Psi that chol determines are not positive definite, here we tackle that problem directly
+    
+    # generate a case with a negative eigenvalue
+    Psi_bad <- Psi
+    Psi_bad[ K, K ] <- -0.001
+    # confirm that chol wouldn't like it
+    expect_error( chol( Psi_bad ) )
+    # now apply our trick
+    expect_silent(
+        Psi_good <- positive_definite( Psi_bad, reg = TRUE )
+    )
+    # confirm that chol likes this now
+    expect_silent( chol( Psi_good ) )
+
+    # repeat with another variant that doesn't regularize
+    expect_silent(
+        Psi_good <- positive_definite( Psi_bad )
+    )
+    # confirm that chol likes this now
+    expect_silent( chol( Psi_good ) )
+})
+
 test_that( 'admixcor works', {
     # for this test, we don't have to fully converge (even in toy data it sometimes takes too long)
     # this stops in a single iteration in tests!
@@ -583,7 +606,6 @@ test_that( 'admixcor2 works', {
     expect_silent(
         objv <- admixcor2( Theta, K, tol = tol, vertex_refine = TRUE )
     )
-    # TODO: Error in `chol.default(Psi1)`: the leading minor of order 3 is not positive
     validate_admixcor( objv, n, K, v = 2 )
     
     # now test regularized versions
@@ -666,7 +688,6 @@ test_that( 'admixcor2 reformed works', {
     expect_silent(
         objv <- admixcor2( Theta, K, tol = tol, reformed = TRUE, vertex_refine = TRUE )
     )
-    # TODO: Error in `chol.default(Psi1)`: the leading minor of order 3 is not positive
     validate_admixcor( objv, n, K, v = 2 )
     
     # now test regularized versions
@@ -735,4 +756,40 @@ test_that( 'admixcor2 reformed works', {
         objv <- admixcor2( Theta, K, tol = tol, reformed = TRUE, Q_algorithm = 'quadprog', vertex_refine = TRUE )
     )
     validate_admixcor( objv, n, K, v = 2 )
+})
+
+test_that( 'admixcor2 works in full run with small K', {
+    # here we want a fuller run, which in practice resulted in some errors we want to learn how to avoid; thus the only change is we use the default tolerance
+    # ideally we run this with K=2, but meh, benchmarks assume K=3 elsewhere
+    # focus on cases of highest interest
+    Q_type <- 'random'
+    # default `Psi_algorithm = 'glmnet'` is key to these errors
+    
+    # test regularized versions only, default `Q_algorithm = 'original'`
+    expect_silent(
+        obj <- admixcor2( Theta, K, alpha = alpha, Q_type = Q_type )
+    )
+    validate_admixcor( obj, n, K, v = 2 )
+    expect_silent(
+        obj <- admixcor2( Theta, K, beta = beta, Q_type = Q_type )
+    )
+    validate_admixcor( obj, n, K, v = 2 )
+    expect_silent(
+        obj <- admixcor2( Theta, K, alpha = alpha, beta = beta, Q_type = Q_type )
+    )
+    validate_admixcor( obj, n, K, v = 2 )
+
+    # and `Q_algorithm = 'quadprog'`!
+    expect_silent(
+        obj <- admixcor2( Theta, K, alpha = alpha, Q_type = Q_type, Q_algorithm = 'quadprog' )
+    )
+    validate_admixcor( obj, n, K, v = 2 )
+    expect_silent(
+        obj <- admixcor2( Theta, K, beta = beta, Q_type = Q_type, Q_algorithm = 'quadprog' )
+    )
+    validate_admixcor( obj, n, K, v = 2 )
+    expect_silent(
+        obj <- admixcor2( Theta, K, alpha = alpha, beta = beta, Q_type = Q_type, Q_algorithm = 'quadprog' )
+    )
+    validate_admixcor( obj, n, K, v = 2 )
 })

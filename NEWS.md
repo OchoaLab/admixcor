@@ -103,3 +103,9 @@ Non-code updates:
 # admixcor 0.0.19.9000 (2024-09-19)
 
 - Actually exported functions `admixcor2` and `objective2`
+
+# admixcor 0.0.20.9000 (2024-09-26)
+
+- Added internal function `positive_definite`, which corrects intermediate `Psi` matrices to be positive definite, ultimately so that `chol` does not fail in the `admixcor2` function.  Corrects fatal errors in `admixcor2` such as:
+  - Error in `chol.default(Psi1)`: the leading minor of order 3 is not positive
+
