@@ -3,8 +3,8 @@ update_L <- function( ThetaSR, Q, R, gamma = 0, algorithm = c('glmnet', 'bvls'),
     # process options
     algorithm <- match.arg( algorithm )
 
-    # uses non-negative (nnls) or bounded variable least squares (bvls), which are equivalent to our problem without regularization; glmnet in theory solves our problem with regularization!
-    # nnls solves exactly the requirement that the lower bound be zero, and exactly forces lower triangle to be zero during optimization, but does not set upper bound directly, we set strict cap of 1 as before
+    # uses bounded variable least squares (bvls), which is equivalent to our problem without regularization; glmnet in theory solves our problem with regularization!
+    # bvls solves exactly the requirement that the lower bound be zero and upper bound be 1, and exactly forces lower triangle to be zero during optimization
 
     # first set up the problem to resemble a linear regression for L, of the form Ax=b
     

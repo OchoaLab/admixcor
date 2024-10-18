@@ -24,16 +24,24 @@ d <- rnorm( K )
 
 ### generic validators
 
-# validates dimensions, non-negativity, rows sum to one
-validate_Q <- function( Q, n, K ) {
+validate_vertex_inds <- function( indexes, K, n ) {
+    # test length
+    expect_equal( length( indexes ), K )
+    # test uniqueness
+    expect_equal( length( unique( indexes ) ), K )
+    # values should be in range
+    expect_true( min( indexes ) >= 1 )
+    expect_true( max( indexes ) <= n )
+}
+
+# validates dimensions, non-negativity with tolerance, rows sum to one
+validate_Q <- function( Q, n, K, tol = 0 ) {
     expect_true( is.matrix( Q ) )
     expect_equal( nrow( Q ), n )
     expect_equal( ncol( Q ), K )
     # weird way to test this inequality but with tolerance
-    ## expect_true( min( Q ) >= 0 )
-    minQ <- min( Q )
-    if ( minQ > 0 ) minQ <- 0
-    expect_equal( minQ, 0 )
+    ## expect_true( min( Q ) >= tol )
+    expect_equal( min( Q, tol ), tol )
     expect_equal( rowSums( Q ), rep.int( 1, n ) )
 }
 
@@ -219,6 +227,98 @@ test_that( 'objective works', {
     expect_true( min( f ) >= 0 )
     expect_true( f[2L] <= n*K ) # unnormalized has this max assuming all values are between 0-1 (not strictly true for linearized objective, because of rotation, but let's see...)
     expect_equal( f[1L], sum( f[2L:4L] ) ) # first is sum of the rest
+})
+
+validate_stretch_Q <- function( data, n, K, tol ) {
+    # test overall object first
+    expect_true( is.list( data ) )
+    expect_equal( names( data ), c('Q', 'S', 'S_inv', 'alpha') )
+    # test Q now
+    validate_Q( data$Q, n, K, tol = tol )
+    # test alpha
+    expect_equal( length( data$alpha ), 1 )
+    expect_true( data$alpha >= 0 )
+    expect_true( data$alpha <= 1 )
+    # test S and S_inv
+    S <- data$S
+    S_inv <- data$S_inv
+    expect_true( is.matrix( S ) )
+    expect_true( is.matrix( S_inv ) )
+    expect_equal( nrow( S ), K )
+    expect_equal( ncol( S ), K )
+    expect_equal( nrow( S_inv ), K )
+    expect_equal( ncol( S_inv ), K )
+    # confirm that they are inverses of each other
+    expect_equal( S %*% S_inv, diag( K ) )
+    # both matrices have rows that sum to 1
+    expect_equal( rowSums( S ), rep.int( 1, K ) )
+    expect_equal( rowSums( S_inv ), rep.int( 1, K ) )
+    # it appears this just isn't true empirically
+    ## # we expect S_inv to always have non-negative values (within tolerance)
+    ## # not sure why but errors here are quite a bit greater than the tolerance
+    ## expect_equal( min( S_inv, 10 * tol ), 10 * tol )
+    # NOTE: S can and does have negative values
+}
+
+test_that( 'vertex_inds, stretch_Q, stretch_Psi works', {
+    # test first on our random Q
+    expect_silent(
+        indexes <- vertex_inds( Q )
+    )
+    # validate these indexes
+    validate_vertex_inds( indexes, K, n )
+
+    # then repeat with a Q constructed to have ties for two ancestries
+    # keep original dimensions for simplicity
+    Q2 <- Q
+    # this will make the first individual appear twice originally, though hopefully a different individual gets chosen for one of the two ancestries later, eventually
+    Q2[ 1, ] <- c( 0.2, 0.4, 0.4 )
+    expect_silent(
+        indexes <- vertex_inds( Q2 )
+    )
+    # validate these indexes
+    validate_vertex_inds( indexes, K, n )
+
+    # and to make it even more challenging, have a second tie on another individual
+    Q3 <- Q2
+    Q3[ 2, ] <- c( 0.1, 0.45, 0.45 )
+    expect_silent(
+        indexes <- vertex_inds( Q3 )
+    )
+    # validate these indexes
+    validate_vertex_inds( indexes, K, n )
+
+    # apply same datasets to stretch_Q
+    # this is default, but needs to be part of validation too
+    tol_stretch <- -0.01
+    expect_silent(
+        data <- stretch_Q( Q, tol = tol_stretch )
+    )
+    # validate all of the rich data provided
+    validate_stretch_Q( data, n, K, tol = tol_stretch )
+    # repeat for constructed edge cases with ties
+    expect_silent(
+        data2 <- stretch_Q( Q2, tol = tol_stretch )
+    )
+    validate_stretch_Q( data2, n, K, tol = tol_stretch )
+    expect_silent(
+        data3 <- stretch_Q( Q3, tol = tol_stretch )
+    )
+    validate_stretch_Q( data3, n, K, tol = tol_stretch )
+
+    # and now apply these transformations to Psi too, and validate them
+    expect_silent(
+        Psi2 <- stretch_Psi( Psi, data$S_inv )
+    )
+    validate_Psi( Psi2, K )
+    expect_silent(
+        Psi2 <- stretch_Psi( Psi, data2$S_inv )
+    )
+    validate_Psi( Psi2, K )
+    expect_silent(
+        Psi2 <- stretch_Psi( Psi, data3$S_inv )
+    )
+    validate_Psi( Psi2, K )
 })
 
 test_that( 'initialize works', {

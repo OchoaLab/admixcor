@@ -109,3 +109,7 @@ Non-code updates:
 - Added internal function `positive_definite`, which corrects intermediate `Psi` matrices to be positive definite, ultimately so that `chol` does not fail in the `admixcor2` function.  Corrects fatal errors in `admixcor2` such as:
   - Error in `chol.default(Psi1)`: the leading minor of order 3 is not positive
 
+# admixcor 0.0.21.9000 (2024-10-18)
+
+- Added functions `stretch_Q` that implements admixture stretching (a theoretical way to stretch admixture proportions to span as much of the simplex as possible without changing objective values), and `stretch_Psi` that applies the matching transformation to the subpopulations coancestry matrix.
+- Removed package `nnls` from "Imports", since it was no longer being used).
