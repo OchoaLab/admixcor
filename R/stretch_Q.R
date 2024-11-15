@@ -13,7 +13,8 @@ stretch_Q <- function( Q, shrink = TRUE, ties_none = FALSE, tol = -0.01, n_iter 
     # this is the matrix of current vertices Qv to use to stretch, which is also the inverse of the stretch matrix
     S_inv[ indexes2, ] <- Q[ indexes[ indexes2 ], ]
     # now get its inverse, which is the stretching transformation
-    S <- solve( S_inv )
+    # in very malformed data this is not invertible despite our best attempts (in one example an entire ancestry was just not predicted, that column was all zeroes), a generalized inverse is guaranteed to work!
+    S <- MASS::ginv( S_inv )
     # apply to Q, let's see if it stayed in range or not
     Q2 <- Q %*% S
     # the implicit alpha, to return if things are good or to modify otherwise
@@ -48,7 +49,7 @@ stretch_Q <- function( Q, shrink = TRUE, ties_none = FALSE, tol = -0.01, n_iter 
         # after we're done with this loop, replace S with the best Sa
         S <- Sa
         # S_inv has to be recalculated now
-        S_inv <- solve( S )
+        S_inv <- MASS::ginv( S )
         # Q2 and alpha are already as desired
     }
     

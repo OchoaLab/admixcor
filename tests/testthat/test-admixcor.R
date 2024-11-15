@@ -60,8 +60,9 @@ validate_L <- function( L, K, fix_L = FALSE ) {
     expect_true( is.matrix( L ) )
     expect_equal( nrow( L ), K )
     expect_equal( ncol( L ), K )
-    expect_true( min( L ) >= 0 )
-    expect_true( max( L ) <= 1 )
+    # tests of inequality with tolerance
+    expect_equal( min( L, 0 ), 0 )
+    expect_equal( max( L, 1 ), 1 )
     # demand that lower triangle is zero! (excludes diagonal)
     if ( fix_L ) {
         expect_true( all( L[ upper.tri( L ) ] == 0 ) )
@@ -72,11 +73,8 @@ validate_L <- function( L, K, fix_L = FALSE ) {
     Psi <- tcrossprod( L )
     #expect_true( min( Psi ) >= 0 ) # implied by earlier test
     # not implied, test too!
-    # weird way to test this inequality but with tolerance
-    ## expect_true( max( Psi ) <= 1 )
-    maxPsi <- max( Psi )
-    if ( maxPsi < 1 ) maxPsi <- 1
-    expect_equal( maxPsi, 1 )
+    # tests of inequality with tolerance
+    expect_equal( max( Psi, 1 ), 1 )
 }
 
 # validates dimensions, non-negativity, and Psi <= 1
@@ -84,14 +82,9 @@ validate_Psi <- function( Psi, K ) {
     expect_true( is.matrix( Psi ) )
     expect_equal( nrow( Psi ), K )
     expect_equal( ncol( Psi ), K )
-    expect_true( min( Psi ) >= 0 )
-    expect_true( max( Psi ) <= 1 )
-    # for more accurate validations, check its full Psi
-    # weird way to test this inequality but with tolerance
-    ## expect_true( max( Psi ) <= 1 )
-    ## maxPsi <- max( Psi )
-    ## if ( maxPsi < 1 ) maxPsi <- 1
-    ## expect_equal( maxPsi, 1 )
+    # tests of inequality with tolerance
+    expect_equal( min( Psi, 0 ), 0 )
+    expect_equal( max( Psi, 1 ), 1 )
 }
 
 # uniform testing for all cases
@@ -731,6 +724,68 @@ test_that( 'admixcor works', {
     validate_admixcor( obj, n, K, fix_L = TRUE )
     expect_silent(
         objv <- admixcor( Theta, K, tol = tol, Q_algorithm = 'quadprog', vertex_refine = TRUE, fix_L = TRUE )
+    )
+    validate_admixcor( objv, n, K, fix_L = TRUE )
+
+    # repeat every previous test with `stretch = TRUE` (keep `fix_L = TRUE`)
+    expect_silent(
+        obj <- admixcor( Theta, K, tol = tol, fix_L = TRUE, stretch = TRUE )
+    )
+    validate_admixcor( obj, n, K, fix_L = TRUE )
+    expect_silent(
+        objv <- admixcor( Theta, K, tol = tol, vertex_refine = TRUE, fix_L = TRUE, stretch = TRUE )
+    )
+    validate_admixcor( objv, n, K, fix_L = TRUE )
+    expect_silent(
+        obj <- admixcor( Theta, K, tol = tol, gamma = 0, fix_L = TRUE, stretch = TRUE )
+    )
+    validate_admixcor( obj, n, K, fix_L = TRUE )
+    expect_silent(
+        obj <- admixcor( Theta, K, tol = tol, delta = 0, fix_L = TRUE, stretch = TRUE )
+    )
+    validate_admixcor( obj, n, K, fix_L = TRUE )
+    expect_silent(
+        obj <- admixcor( Theta, K, tol = tol, gamma = 0, delta = 0, fix_L = TRUE, stretch = TRUE )
+    )
+    validate_admixcor( obj, n, K, fix_L = TRUE )
+    expect_silent(
+        obj <- admixcor( Theta, K, tol = tol, Q_type = 'random', fix_L = TRUE, stretch = TRUE )
+    )
+    validate_admixcor( obj, n, K, fix_L = TRUE )
+    expect_silent(
+        obj <- admixcor( Theta, K, tol = tol, Q_type = 'random', gamma = 0, delta = 0, fix_L = TRUE, stretch = TRUE )
+    )
+    validate_admixcor( obj, n, K, fix_L = TRUE )
+    expect_silent(
+        obj <- admixcor( Theta, K, tol = tol, Q_type = 'uniform', fix_L = TRUE, stretch = TRUE )
+    )
+    validate_admixcor( obj, n, K, fix_L = TRUE )
+    expect_silent(
+        obj <- admixcor( Theta, K, tol = tol, Q_type = 'uniform', gamma = 0, delta = 0, fix_L = TRUE, stretch = TRUE )
+    )
+    validate_admixcor( obj, n, K, fix_L = TRUE )
+    expect_silent(
+        obj <- admixcor( Theta, K, tol = tol, L_type = 'uniform', fix_L = TRUE, stretch = TRUE )
+    )
+    validate_admixcor( obj, n, K, fix_L = TRUE )
+    expect_silent(
+        obj <- admixcor( Theta, K, tol = tol, L_type = 'diagrandom', fix_L = TRUE, stretch = TRUE )
+    )
+    validate_admixcor( obj, n, K, fix_L = TRUE )
+    expect_silent(
+        obj <- admixcor( Theta, K, tol = tol, L_type = 'random', fix_L = TRUE, stretch = TRUE )
+    )
+    validate_admixcor( obj, n, K, fix_L = TRUE )
+    expect_silent(
+        obj <- admixcor( Theta, K, tol = tol, L_algorithm = 'bvls', fix_L = TRUE, stretch = TRUE )
+    )
+    validate_admixcor( obj, n, K, fix_L = TRUE )
+    expect_silent(
+        obj <- admixcor( Theta, K, tol = tol, Q_algorithm = 'quadprog', fix_L = TRUE, stretch = TRUE )
+    )
+    validate_admixcor( obj, n, K, fix_L = TRUE )
+    expect_silent(
+        objv <- admixcor( Theta, K, tol = tol, Q_algorithm = 'quadprog', vertex_refine = TRUE, fix_L = TRUE, stretch = TRUE )
     )
     validate_admixcor( objv, n, K, fix_L = TRUE )
 })
