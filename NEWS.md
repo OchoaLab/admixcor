@@ -113,3 +113,8 @@ Non-code updates:
 
 - Added functions `stretch_Q` that implements admixture stretching (a theoretical way to stretch admixture proportions to span as much of the simplex as possible without changing objective values), and `stretch_Psi` that applies the matching transformation to the subpopulations coancestry matrix.
 - Removed package `nnls` from "Imports", since it was no longer being used).
+
+# admixcor 0.0.22.9000 (2024-11-14)
+
+- Function `admixcor` added options `stretch` to allow stretching in every iteration using function `stretch_Q`, `tol_stretch` to set the largest negative values allowed (temporarily within an interation), and `ties_none` to decide how to handle vertices associated with more than one ancestry.
+- Function `stretch_Q` also added option `ties_none` as described above.  Internally this function now allows unstretched ancestries if no suitable vertices were identified.  The updates fix a bug that in some cases had this function hang (essentially stuck in an infinite loop) trying to choose unique vertices when there is no reasonable choice.

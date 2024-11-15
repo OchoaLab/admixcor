@@ -1,11 +1,17 @@
 # `tol` is lowest value allowed (should be negative to have tolerance, the intolerant version is zero)
 #' @export
-stretch_Q <- function( Q, shrink = TRUE, tol = -0.01, n_iter = -log2( .Machine$double.eps ) ) {
+stretch_Q <- function( Q, shrink = TRUE, ties_none = FALSE, tol = -0.01, n_iter = -log2( .Machine$double.eps ) ) {
+    # need the identity matrix here
+    I <- diag( ncol( Q ) )
+    
     # find the individual with the maximum of each ancestry
-    # this special function breaks ties, important to avoid singularity further below
-    indexes <- vertex_inds( Q )
+    # this special function identifies ties and handles them, important to avoid singularity further below
+    indexes <- vertex_inds( Q, ties_none = ties_none )
+    # indexes can have missing values when no suitable vertex was identified, leave those cases unstretched
+    S_inv <- I # to allow for unstretched cases by default
+    indexes2 <- !is.na( indexes )
     # this is the matrix of current vertices Qv to use to stretch, which is also the inverse of the stretch matrix
-    S_inv <- Q[ indexes, ]
+    S_inv[ indexes2, ] <- Q[ indexes[ indexes2 ], ]
     # now get its inverse, which is the stretching transformation
     S <- solve( S_inv )
     # apply to Q, let's see if it stayed in range or not
@@ -19,8 +25,6 @@ stretch_Q <- function( Q, shrink = TRUE, tol = -0.01, n_iter = -log2( .Machine$d
         alpha_max <- 1
         # first time it's too high
         high <- TRUE
-        # need the identity matrix here
-        I <- diag( ncol( Q ) )
         # perform a continuous binary search
         # the number of iterations is fixed, set by machine precision
         for ( i in 1 : n_iter ) {

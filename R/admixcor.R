@@ -14,6 +14,7 @@ admixcor <- function(
                      report_freq = 1000,
                      fix_L = FALSE,
 		     stretch = FALSE,
+                     ties_none = FALSE,
 		     tol_stretch = -0.01
                      ) {
     # process options
@@ -66,7 +67,7 @@ admixcor <- function(
         # apply the updates, one at the time
 	if ( stretch ) {
 		Q1 <- update_Q( ThetaSR, L0, R0, delta, I, algorithm = Q_algorithm, vertex_refine = vertex_refine )
-		Q1 <- stretch_Q( Q1, tol = tol_stretch )$Q
+		Q1 <- stretch_Q( Q1, ties_none = ties_none, tol = tol_stretch )$Q
 		Q1[Q1 < 0] <- 0
 		Q1 <- Q1 / rowSums( Q1 )
 		L1 <- update_L( ThetaSR, Q1, R0, gamma, algorithm = L_algorithm, fix_L = fix_L )

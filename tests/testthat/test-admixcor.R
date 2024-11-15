@@ -27,11 +27,11 @@ d <- rnorm( K )
 validate_vertex_inds <- function( indexes, K, n ) {
     # test length
     expect_equal( length( indexes ), K )
-    # test uniqueness
-    expect_equal( length( unique( indexes ) ), K )
-    # values should be in range
-    expect_true( min( indexes ) >= 1 )
-    expect_true( max( indexes ) <= n )
+    # test uniqueness, actually no longer true for some tie cases, some may be missing, especially with multiple NA cases
+    expect_true( length( unique( indexes ) ) <= K )
+    # values should be in range, but NAs are allowed
+    expect_true( min( indexes, na.rm = TRUE ) >= 1 )
+    expect_true( max( indexes, na.rm = TRUE ) <= n )
 }
 
 # validates dimensions, non-negativity with tolerance, rows sum to one
@@ -268,6 +268,12 @@ test_that( 'vertex_inds, stretch_Q, stretch_Psi works', {
     # validate these indexes
     validate_vertex_inds( indexes, K, n )
 
+    # repeat with other version
+    expect_silent(
+        indexes <- vertex_inds( Q, ties_none = TRUE )
+    )
+    validate_vertex_inds( indexes, K, n )
+
     # then repeat with a Q constructed to have ties for two ancestries
     # keep original dimensions for simplicity
     Q2 <- Q
@@ -278,6 +284,11 @@ test_that( 'vertex_inds, stretch_Q, stretch_Psi works', {
     )
     # validate these indexes
     validate_vertex_inds( indexes, K, n )
+    # repeat with other version
+    expect_silent(
+        indexes <- vertex_inds( Q2, ties_none = TRUE )
+    )
+    validate_vertex_inds( indexes, K, n )
 
     # and to make it even more challenging, have a second tie on another individual
     Q3 <- Q2
@@ -287,7 +298,12 @@ test_that( 'vertex_inds, stretch_Q, stretch_Psi works', {
     )
     # validate these indexes
     validate_vertex_inds( indexes, K, n )
-
+    # repeat with other version
+    expect_silent(
+        indexes <- vertex_inds( Q3, ties_none = TRUE )
+    )
+    validate_vertex_inds( indexes, K, n )
+    
     # apply same datasets to stretch_Q
     # this is default, but needs to be part of validation too
     tol_stretch <- -0.01
@@ -305,6 +321,19 @@ test_that( 'vertex_inds, stretch_Q, stretch_Psi works', {
         data3 <- stretch_Q( Q3, tol = tol_stretch )
     )
     validate_stretch_Q( data3, n, K, tol = tol_stretch )
+    # and all with other version
+    expect_silent(
+        data4 <- stretch_Q( Q, tol = tol_stretch, ties_none = TRUE )
+    )
+    validate_stretch_Q( data, n, K, tol = tol_stretch )
+    expect_silent(
+        data5 <- stretch_Q( Q2, tol = tol_stretch, ties_none = TRUE )
+    )
+    validate_stretch_Q( data2, n, K, tol = tol_stretch )
+    expect_silent(
+        data6 <- stretch_Q( Q3, tol = tol_stretch, ties_none = TRUE )
+    )
+    validate_stretch_Q( data3, n, K, tol = tol_stretch )
 
     # and now apply these transformations to Psi too, and validate them
     expect_silent(
@@ -317,6 +346,18 @@ test_that( 'vertex_inds, stretch_Q, stretch_Psi works', {
     validate_Psi( Psi2, K )
     expect_silent(
         Psi2 <- stretch_Psi( Psi, data3$S_inv )
+    )
+    validate_Psi( Psi2, K )
+    expect_silent(
+        Psi2 <- stretch_Psi( Psi, data4$S_inv )
+    )
+    validate_Psi( Psi2, K )
+    expect_silent(
+        Psi2 <- stretch_Psi( Psi, data5$S_inv )
+    )
+    validate_Psi( Psi2, K )
+    expect_silent(
+        Psi2 <- stretch_Psi( Psi, data6$S_inv )
     )
     validate_Psi( Psi2, K )
 })
