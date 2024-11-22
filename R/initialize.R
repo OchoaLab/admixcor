@@ -12,8 +12,7 @@ initialize <- function(
                        K,
                        n,
                        Q_type = c('kmeans', 'random', 'uniform'),
-                       L_type = c('identity', 'uniform', 'diagrandom', 'random'),
-                       fix_L = FALSE
+                       L_type = c('identity', 'uniform', 'diagrandom', 'random')
                        ) {
     # process options
     Q_type <- match.arg( Q_type )
@@ -46,11 +45,7 @@ initialize <- function(
         # all values 1/sqrt(K), ensure Psi is between 0 and 1
         L <- matrix( 1 / sqrt( K ), K, K )
         # ensure this is like cholesky
-        if ( fix_L ) {
-            L[ upper.tri( L ) ] <- 0
-        } else {
-            L[ lower.tri( L ) ] <- 0
-        }
+        L[ upper.tri( L ) ] <- 0
     } else if ( L_type == 'identity' ) {
         L <- diag( 1, K, K )
     } else if ( L_type == 'diagrandom' ) {
@@ -59,11 +54,7 @@ initialize <- function(
         # random values between 0 and 1/sqrt(K), ensure Psi is between 0 and 1
         L <- matrix( stats::runif( K^2 ), K, K ) / sqrt(K)
         # ensure this is like cholesky
-        if ( fix_L ) {
-            L[ upper.tri( L ) ] <- 0
-        } else {
-            L[ lower.tri( L ) ] <- 0
-        }
+        L[ upper.tri( L ) ] <- 0
     } else
         stop( '`L_type` not implemented: ', L_type )
     

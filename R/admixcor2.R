@@ -37,7 +37,7 @@ admixcor2 <- function(
     alpha <- alpha * n / K
 
     # initialize other variables
-    Vars <- initialize( ThetaSR, K, n, Q_type, L_type, fix_L = TRUE )
+    Vars <- initialize( ThetaSR, K, n, Q_type, L_type )
     Q0 <- Vars$Q
     L0 <- Vars$L
     Psi0 <- tcrossprod( L0 )

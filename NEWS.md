@@ -118,3 +118,8 @@ Non-code updates:
 
 - Function `admixcor` added options `stretch` to allow stretching in every iteration using function `stretch_Q`, `tol_stretch` to set the largest negative values allowed (temporarily within an interation), and `ties_none` to decide how to handle vertices associated with more than one ancestry.
 - Function `stretch_Q` also added option `ties_none` as described above.  Internally this function now allows unstretched ancestries if no suitable vertices were identified.  The updates fix a bug that in some cases had this function hang (essentially stuck in an infinite loop) trying to choose unique vertices when there is no reasonable choice.
+
+# admixcor 0.0.23.9000 (2024-11-22)
+
+- Function `admixcor2` added option `stretch`, `tol_stretch`, and `ties_none` (see previous entry for `admixcor`).
+- Function `admixcor` removed option `fix_L`, which is now always `TRUE`.

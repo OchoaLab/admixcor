@@ -1,5 +1,5 @@
 # update L (square root of Psi)
-update_L <- function( ThetaSR, Q, R, gamma = 0, algorithm = c('glmnet', 'bvls'), fix_L = FALSE ) {
+update_L <- function( ThetaSR, Q, R, gamma = 0, algorithm = c('glmnet', 'bvls') ) {
     # process options
     algorithm <- match.arg( algorithm )
 
@@ -17,7 +17,7 @@ update_L <- function( ThetaSR, Q, R, gamma = 0, algorithm = c('glmnet', 'bvls'),
     A <- t( R ) %x% Q
     b <- as.vector( ThetaSR )
     # now, half of L is zero, let's make sure that's reflected in the problem statement (so that constraint is enforced)
-    indexes <- as.vector( if ( fix_L ) lower.tri( L, diag = TRUE ) else upper.tri( L, diag = TRUE ) )
+    indexes <- as.vector( lower.tri( L, diag = TRUE ) )
     A <- A[ , indexes ]
     # now get solutions!
     # solve system of equations with non-negative constraint, or both [0,1] bounds
@@ -41,11 +41,6 @@ update_L <- function( ThetaSR, Q, R, gamma = 0, algorithm = c('glmnet', 'bvls'),
     # lastly, reform x into L, return that!
     # (L was already a zero matrix, so the rest is all set!)
     L[ indexes ] <- x
-    ## if ( fix_L ) {
-    ##     L[ lower.tri( L, diag = TRUE ) ] <- x
-    ## } else {
-    ##     L[ upper.tri( L, diag = TRUE ) ] <- x
-    ## }
     
     return( L )
 }
