@@ -5,7 +5,6 @@ admixcor <- function(
                      gamma = 0,
                      delta = 0,
                      L_type = c('identity', 'uniform', 'diagrandom', 'random'),
-                     Q_algorithm = c('original', 'quadprog'),
                      L_algorithm = c('glmnet', 'bvls'),
                      vertex_refine = FALSE,
                      tol = sqrt( .Machine$double.eps ), # 1e-15
@@ -18,7 +17,6 @@ admixcor <- function(
     # process options
     L_type <- match.arg( L_type )
     L_algorithm <- match.arg( L_algorithm )
-    Q_algorithm <- match.arg( Q_algorithm )
     
     # number of individuals is dimensions of Theta
     n <- nrow( Theta )
@@ -63,7 +61,7 @@ admixcor <- function(
         
         # apply the updates, one at the time
 	if ( stretch ) {
-		Q1 <- update_Q( ThetaSR, L0, R0, delta, I, algorithm = Q_algorithm, vertex_refine = vertex_refine )
+		Q1 <- update_Q( ThetaSR, L0, R0, delta, I, vertex_refine = vertex_refine )
 		Q1 <- stretch_Q( Q1, ties_none = ties_none, tol = tol_stretch )$Q
 		Q1[Q1 < 0] <- 0
 		Q1 <- Q1 / rowSums( Q1 )
@@ -73,7 +71,7 @@ admixcor <- function(
 	else {
 		R1 <- update_R( ThetaSR, Q0, L0 )
 	        L1 <- update_L( ThetaSR, Q0, R1, gamma, algorithm = L_algorithm )
-		Q1 <- update_Q( ThetaSR, L1, R1, delta, I, algorithm = Q_algorithm, vertex_refine = vertex_refine )
+		Q1 <- update_Q( ThetaSR, L1, R1, delta, I, vertex_refine = vertex_refine )
 	}
         # calculate step sizes, to assess convergence
 	ndQ <- norm( Q0 - Q1, "F" )^2

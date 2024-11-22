@@ -499,18 +499,6 @@ test_that( 'update_Q works', {
     Q2v <- update_Q( ThetaSR, L, R, 0, I, vertex_refine = TRUE )
     expect_equal( Q2v, Q )
     # if these are all equal, then the objectives are equal (no need to test directly)
-
-    # test new version based on quadprog, repeating both earlier tests
-    Q2 <- update_Q( ThetaSR, L2, R, delta, I, algorithm = 'quadprog' )
-    validate_Q( Q2, n, K )
-    Q2v <- update_Q( ThetaSR, L2, R, delta, I, algorithm = 'quadprog', vertex_refine = TRUE )
-    validate_Q( Q2v, n, K )
-    validate_vertex_refine( ThetaSR, Q2, Q2v, L2, R, gamma, delta )
-    # can only recover true solution if we don't penalize!
-    Q2 <- update_Q( ThetaSR, L, R, 0, I, algorithm = 'quadprog' )
-    expect_equal( Q2, Q )
-    Q2v <- update_Q( ThetaSR, L, R, 0, I, algorithm = 'quadprog', vertex_refine = TRUE )
-    expect_equal( Q2v, Q )
 })
 
 test_that( 'positive_definite works', {
@@ -600,19 +588,6 @@ test_that( 'admixcor works', {
     validate_admixcor( obj, n, K )
     # TODO: `maxPsi` (`actual`) not equal to 1 (`expected`).
 
-    # and Q algorithms!
-    expect_silent(
-        obj <- admixcor( Theta, K, tol = tol, Q_algorithm = 'quadprog' )
-    )
-    validate_admixcor( obj, n, K )
-    expect_silent(
-        objv <- admixcor( Theta, K, tol = tol, Q_algorithm = 'quadprog', vertex_refine = TRUE )
-    )
-    validate_admixcor( objv, n, K )
-    ## if ( objv$f > obj$f )
-    ##     message( objv$f, ' > ', obj$f )
-    ## expect_true( objv$f <= obj$f ) # TODO FAILED x1
-
     # repeat every previous test with `stretch = TRUE`
     expect_silent(
         obj <- admixcor( Theta, K, tol = tol, stretch = TRUE )
@@ -650,14 +625,6 @@ test_that( 'admixcor works', {
         obj <- admixcor( Theta, K, tol = tol, L_algorithm = 'bvls', stretch = TRUE )
     )
     validate_admixcor( obj, n, K )
-    expect_silent(
-        obj <- admixcor( Theta, K, tol = tol, Q_algorithm = 'quadprog', stretch = TRUE )
-    )
-    validate_admixcor( obj, n, K )
-    expect_silent(
-        objv <- admixcor( Theta, K, tol = tol, Q_algorithm = 'quadprog', vertex_refine = TRUE, stretch = TRUE )
-    )
-    validate_admixcor( objv, n, K )
 })
 
 test_that( 'admixcor2 works', {
@@ -708,16 +675,6 @@ test_that( 'admixcor2 works', {
         obj <- admixcor2( Theta, K, tol = tol, Psi_algorithm = 'bvls' )
     )
     validate_admixcor( obj, n, K, v = 2 )
-
-    # and Q algorithms!
-    expect_silent(
-        obj <- admixcor2( Theta, K, tol = tol, Q_algorithm = 'quadprog' )
-    )
-    validate_admixcor( obj, n, K, v = 2 )
-    expect_silent(
-        objv <- admixcor2( Theta, K, tol = tol, Q_algorithm = 'quadprog', vertex_refine = TRUE )
-    )
-    validate_admixcor( objv, n, K, v = 2 )
 })
 
 test_that( 'admixcor2 reformed works', {
@@ -768,16 +725,6 @@ test_that( 'admixcor2 reformed works', {
         obj <- admixcor2( Theta, K, tol = tol, reformed = TRUE, Psi_algorithm = 'bvls' )
     )
     validate_admixcor( obj, n, K, v = 2 )
-
-    # and Q algorithms!
-    expect_silent(
-        obj <- admixcor2( Theta, K, tol = tol, reformed = TRUE, Q_algorithm = 'quadprog' )
-    )
-    validate_admixcor( obj, n, K, v = 2 )
-    expect_silent(
-        objv <- admixcor2( Theta, K, tol = tol, reformed = TRUE, Q_algorithm = 'quadprog', vertex_refine = TRUE )
-    )
-    validate_admixcor( objv, n, K, v = 2 )
 })
 
 test_that( 'admixcor2 works in full run with small K', {
@@ -786,7 +733,7 @@ test_that( 'admixcor2 works in full run with small K', {
     # focus on cases of highest interest
     # default `Psi_algorithm = 'glmnet'` is key to these errors
     
-    # test regularized versions only, default `Q_algorithm = 'original'`
+    # test regularized versions only
     expect_silent(
         obj <- admixcor2( Theta, K, alpha = alpha )
     )
@@ -797,20 +744,6 @@ test_that( 'admixcor2 works in full run with small K', {
     validate_admixcor( obj, n, K, v = 2 )
     expect_silent(
         obj <- admixcor2( Theta, K, alpha = alpha, beta = beta )
-    )
-    validate_admixcor( obj, n, K, v = 2 )
-
-    # and `Q_algorithm = 'quadprog'`!
-    expect_silent(
-        obj <- admixcor2( Theta, K, alpha = alpha, Q_algorithm = 'quadprog' )
-    )
-    validate_admixcor( obj, n, K, v = 2 )
-    expect_silent(
-        obj <- admixcor2( Theta, K, beta = beta, Q_algorithm = 'quadprog' )
-    )
-    validate_admixcor( obj, n, K, v = 2 )
-    expect_silent(
-        obj <- admixcor2( Theta, K, alpha = alpha, beta = beta, Q_algorithm = 'quadprog' )
     )
     validate_admixcor( obj, n, K, v = 2 )
 })

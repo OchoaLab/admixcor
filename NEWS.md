@@ -125,3 +125,4 @@ Non-code updates:
 - Function `admixcor` removed option `fix_L`, which is now always `TRUE`.
 - Both functions `admixcor` and `admixcor2`:
   - Removed option `Q_type`, which is now always equal to `"random"`
+  - Removed option `Q_algorithm`, which is now always equal to `"quadprog"`
