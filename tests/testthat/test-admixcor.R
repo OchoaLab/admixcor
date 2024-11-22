@@ -618,6 +618,28 @@ test_that( 'admixcor2 works', {
         obj <- admixcor2( Theta, K, tol = tol, Psi_algorithm = 'bvls' )
     )
     validate_admixcor( obj, n, K, v = 2 )
+
+    # repeat all previous tests with `stretch = TRUE`
+    expect_silent(
+        obj <- admixcor2( Theta, K, tol = tol, stretch = TRUE )
+    )
+    validate_admixcor( obj, n, K, v = 2 )
+    expect_silent(
+        obj <- admixcor2( Theta, K, tol = tol, alpha = alpha, stretch = TRUE )
+    )
+    validate_admixcor( obj, n, K, v = 2 )
+    expect_silent(
+        obj <- admixcor2( Theta, K, tol = tol, beta = beta, stretch = TRUE )
+    )
+    validate_admixcor( obj, n, K, v = 2 )
+    expect_silent(
+        obj <- admixcor2( Theta, K, tol = tol, alpha = alpha, beta = beta, stretch = TRUE )
+    )
+    validate_admixcor( obj, n, K, v = 2 )
+    expect_silent(
+        obj <- admixcor2( Theta, K, tol = tol, Psi_algorithm = 'bvls', stretch = TRUE )
+    )
+    validate_admixcor( obj, n, K, v = 2 )
 })
 
 test_that( 'admixcor2 reformed works', {
