@@ -1,43 +1,18 @@
-# initializes Q using kmeans on Theta (will also work and is faster if ThetaSR is provided!)
 # L initialized to I
 # R is initialized to I
 
-# NOTES:
-# - Q_type:
-#   - 'kmeans' (default) continues to be best in latest tests
-#   - 'random' is not bad but usually a little worse than 'kmeans'
-#   - 'uniform' is super bad, always converged in one iteration (current operation order and other options, perhaps this changes), so it appears to be fixed point.  Will leave in order to run more tests later
 initialize <- function(
                        Theta,
                        K,
                        n,
-                       Q_type = c('kmeans', 'random', 'uniform'),
                        L_type = c('identity', 'uniform', 'diagrandom', 'random')
                        ) {
     # process options
-    Q_type <- match.arg( Q_type )
     L_type <- match.arg( L_type )
 
-    # initialize Q
-    if ( Q_type == 'kmeans' ) {
-        # initialize Q with k-means!
-        clusters <- stats::kmeans( Theta, K, nstart = 100, iter.max = 100 )
-        clusters <- clusters$cluster
-        # translate cluster vector to Q matrix
-        Q <- matrix( 0, nrow = n, ncol = K )
-        for ( x in 1L : n ) {
-            Q[ x, clusters[x] ] <- 1
-        }
-    } else if ( Q_type == 'random' ) {
-        # initialize Q randomly
-        Q <- matrix( stats::runif( n * K ), ncol = K, nrow = n )
-        Q <- Q / rowSums( Q )
-    } else if ( Q_type == 'uniform' ) {
-        # start in the middle of the simplex for every individual
-        # NOTE this is a singular case!
-        Q <- matrix( 1 / K, ncol = K, nrow = n )
-    } else
-        stop( '`Q_type` not implemented: ', Q_type )
+    # initialize Q randomly
+    Q <- matrix( stats::runif( n * K ), ncol = K, nrow = n )
+    Q <- Q / rowSums( Q )
 
     # initialize L
     if ( L_type == 'uniform' ) {

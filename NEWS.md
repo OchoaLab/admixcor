@@ -123,3 +123,5 @@ Non-code updates:
 
 - Function `admixcor2` added option `stretch`, `tol_stretch`, and `ties_none` (see previous entry for `admixcor`).
 - Function `admixcor` removed option `fix_L`, which is now always `TRUE`.
+- Both functions `admixcor` and `admixcor2`:
+  - Removed option `Q_type`, which is now always equal to `"random"`

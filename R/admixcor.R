@@ -4,7 +4,6 @@ admixcor <- function(
                      K,
                      gamma = 0,
                      delta = 0,
-                     Q_type = c('kmeans', 'random', 'uniform'),
                      L_type = c('identity', 'uniform', 'diagrandom', 'random'),
                      Q_algorithm = c('original', 'quadprog'),
                      L_algorithm = c('glmnet', 'bvls'),
@@ -17,7 +16,6 @@ admixcor <- function(
 		     tol_stretch = -0.01
                      ) {
     # process options
-    Q_type <- match.arg( Q_type )
     L_type <- match.arg( L_type )
     L_algorithm <- match.arg( L_algorithm )
     Q_algorithm <- match.arg( Q_algorithm )
@@ -32,7 +30,7 @@ admixcor <- function(
     gamma <- gamma * n / K
     
     # initialize other variables
-    Vars <- initialize( ThetaSR, K, n, Q_type, L_type )
+    Vars <- initialize( ThetaSR, K, n, L_type )
     Q0 <- Vars$Q
     L0 <- Vars$L
     R0 <- Vars$R
