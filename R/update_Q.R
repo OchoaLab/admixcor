@@ -1,4 +1,4 @@
-update_Q <- function( ThetaSR, L, R, delta, I, vertex_refine = FALSE ) {
+update_Q <- function( ThetaSR, L, R, delta, I ) {
 
     # first set up the problem to resemble a linear regression for Q, of the form Ax=b
     # Q %*% ( L %*% R ) = ThetaSR
@@ -42,18 +42,9 @@ update_Q <- function( ThetaSR, L, R, delta, I, vertex_refine = FALSE ) {
         # unfortunately this varies per individual because b varies
         # NOTE: is it missing a minus sign??? (that's what wikipedia suggests, have to check against quadprog package).  NO, quadprog has minus sign built in, but wikipedia doesn't
         d <- drop( crossprod( A, b ) )
-        # NOTE: consider compact (sparse) version of problem!  Also pre-factorizing D into "R-inv", to share for all individuals (but it will change across iterations)
+        # NOTE: consider pre-factorizing D into "R-inv", to share for all individuals (but it will change across iterations)
         x <- quadprog::solve.QP( D, d, C, c, meq )$solution
         
-        if ( vertex_refine ) {
-            # test vertices (all K unadmixed cases), see if the best one outperform the solution of the regular algorithms (if so, replace solution)
-            data <- update_Q_vertex_scan( D, d )
-            # now calculate objective of current solution
-            obj_x <- obj_quadprog( D, d, x )
-            # replace if vertex objective is better
-            if ( data$obj < obj_x )
-                x <- data$q
-        }
         # save column in desired place
         Q[ i, ] <- x
     }

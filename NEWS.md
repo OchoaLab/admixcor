@@ -126,3 +126,4 @@ Non-code updates:
 - Both functions `admixcor` and `admixcor2`:
   - Removed option `Q_type`, which is now always equal to `"random"`
   - Removed option `Q_algorithm`, which is now always equal to `"quadprog"`
+  - Removed option `vertex_refine`, which is now always `FALSE`

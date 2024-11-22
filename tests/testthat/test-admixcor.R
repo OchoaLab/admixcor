@@ -448,57 +448,16 @@ test_that( 'update_Psi works', {
     expect_equal( Psi2, Psi )
 })
 
-test_that( "obj_quadprog works", {
-    expect_silent(
-        obj <- obj_quadprog( Psi, d, Q2[1,] )
-    )
-})
-
-test_that( "update_Q_vertex_scan works", {
-    expect_silent(
-        data <- update_Q_vertex_scan( Psi, d )
-    )
-    expect_true( is.list( data ) )
-    expect_equal( names( data ), c('q', 'obj') )
-    expect_true( is.numeric( data$q ) )
-    expect_equal( length( data$q ), K )
-    expect_true( is.numeric( data$obj ) )
-    expect_equal( length( data$obj ), 1L )
-
-    # compare to slower, more explicit version
-    expect_silent(
-        data2 <- update_Q_vertex_scan( Psi, d, fast = FALSE )
-    )
-    expect_equal( data2, data )
-})
-
-validate_vertex_refine <- function( ThetaSR, Q1, Q2, L, R, gamma, delta ) {
-    # calculate both objectives
-    obj1 <- objective( ThetaSR, Q1, L, R, gamma, delta )[1]
-    obj2 <- objective( ThetaSR, Q2, L, R, gamma, delta )[1]
-    # make sure that second is as good or better than first!
-    expect_true( obj2 <= obj1 )
-}
-
 test_that( 'update_Q works', {
     # test on random data first, make sure it doesn't break; all are globally set
     # here we use exact ThetaSR from real data, but random L for test
     Q2 <- update_Q( ThetaSR, L2, R, delta, I )
     # test basic expectations
     validate_Q( Q2, n, K )
-    # repeat all tests with vertex_refine = TRUE, which requires delta and I in all cases!
-    Q2v <- update_Q( ThetaSR, L2, R, delta, I, vertex_refine = TRUE )
-    validate_Q( Q2v, n, K )
-    # ensure that objectives are actually improved by vertex_refine
-    validate_vertex_refine( ThetaSR, Q2, Q2v, L2, R, gamma, delta )
     
     # now try exact solution (true ThetaSR, L and R), here it is recoverable in theory if we don't penalize!
     Q2 <- update_Q( ThetaSR, L, R, 0, I )
     expect_equal( Q2, Q )
-    # repeat all tests with vertex_refine = TRUE, which requires delta and I in all cases!
-    Q2v <- update_Q( ThetaSR, L, R, 0, I, vertex_refine = TRUE )
-    expect_equal( Q2v, Q )
-    # if these are all equal, then the objectives are equal (no need to test directly)
 })
 
 test_that( 'positive_definite works', {
@@ -535,14 +494,6 @@ test_that( 'admixcor works', {
     ## obj <- admixcor( Theta, K, tol = tol, verbose = TRUE ) # for testing
     validate_admixcor( obj, n, K )
     # TODO: `maxPsi` (`actual`) not equal to 1 (`expected`).
-    expect_silent(
-        objv <- admixcor( Theta, K, tol = tol, vertex_refine = TRUE )
-    )
-    validate_admixcor( objv, n, K )
-    ## # are final objectives improved?  Surprisingly, not always (but these are weird, toy problems)!
-    ## if ( objv$f > obj$f )
-    ##     message( objv$f, ' > ', obj$f )
-    ## expect_true( objv$f <= obj$f ) # FAILED x4
     
     # now test no regularization version, where some things may be singular if we're not careful
     expect_silent(
@@ -594,10 +545,6 @@ test_that( 'admixcor works', {
     )
     validate_admixcor( obj, n, K )
     expect_silent(
-        objv <- admixcor( Theta, K, tol = tol, vertex_refine = TRUE, stretch = TRUE )
-    )
-    validate_admixcor( objv, n, K )
-    expect_silent(
         obj <- admixcor( Theta, K, tol = tol, gamma = 0, stretch = TRUE )
     )
     validate_admixcor( obj, n, K )
@@ -636,10 +583,6 @@ test_that( 'admixcor2 works', {
         obj <- admixcor2( Theta, K, tol = tol )
     )
     validate_admixcor( obj, n, K, v = 2 )
-    expect_silent(
-        objv <- admixcor2( Theta, K, tol = tol, vertex_refine = TRUE )
-    )
-    validate_admixcor( objv, n, K, v = 2 )
     
     # now test regularized versions
     expect_silent(
@@ -686,10 +629,6 @@ test_that( 'admixcor2 reformed works', {
         obj <- admixcor2( Theta, K, tol = tol, reformed = TRUE )
     )
     validate_admixcor( obj, n, K, v = 2 )
-    expect_silent(
-        objv <- admixcor2( Theta, K, tol = tol, reformed = TRUE, vertex_refine = TRUE )
-    )
-    validate_admixcor( objv, n, K, v = 2 )
     
     # now test regularized versions
     expect_silent(

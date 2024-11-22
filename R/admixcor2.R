@@ -8,7 +8,6 @@ admixcor2 <- function(
                      delta = 0,
                      L_type = c('identity', 'uniform', 'diagrandom', 'random'),
                      Psi_algorithm = c('glmnet', 'bvls'),
-                     vertex_refine = FALSE,
                      tol = sqrt( .Machine$double.eps ), # 1e-15
 		     tol_psi = sqrt( .Machine$double.eps ), # 1e-15
                      nstep_max = 100000,
@@ -72,7 +71,7 @@ admixcor2 <- function(
         
         # apply the updates, one at the time
 	if ( stretch ) {
-		Q1 <- update_Q( ThetaSR, L0, R0, delta, I, vertex_refine = vertex_refine )
+		Q1 <- update_Q( ThetaSR, L0, R0, delta, I )
 		Q1 <- stretch_Q( Q1, ties_none = ties_none, tol = tol_stretch )$Q
 		Q1[Q1 < 0] <- 0
 		Q1 <- Q1 / rowSums( Q1 )
@@ -86,7 +85,7 @@ admixcor2 <- function(
 	        Psi1 <- positive_definite( Psi1, tol_psi = tol_psi )
 	        L1 <- t(chol( Psi1 ) )
 	        R1 <- update_R( ThetaSR, Q0, L1 )
-	        Q1 <- update_Q( ThetaSR, L1, R1, delta, I, vertex_refine = vertex_refine )
+	        Q1 <- update_Q( ThetaSR, L1, R1, delta, I )
 	}
 
         # calculate step sizes, to assess convergence
