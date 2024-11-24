@@ -7,7 +7,6 @@ admixcor2 <- function(
                      gamma = 0,
                      delta = 0,
                      L_type = c('identity', 'uniform', 'diagrandom', 'random'),
-                     Psi_algorithm = c('glmnet', 'bvls'),
                      tol = sqrt( .Machine$double.eps ), # 1e-15
 		     tol_psi = sqrt( .Machine$double.eps ), # 1e-15
                      nstep_max = 100000,
@@ -19,7 +18,6 @@ admixcor2 <- function(
                      ) {
     # process options
     L_type <- match.arg( L_type )
-    Psi_algorithm <- match.arg( Psi_algorithm )
     
     # number of individuals is dimensions of Theta
     n <- nrow( Theta )
@@ -75,13 +73,13 @@ admixcor2 <- function(
 		Q1 <- stretch_Q( Q1, ties_none = ties_none, tol = tol_stretch )$Q
 		Q1[Q1 < 0] <- 0
 		Q1 <- Q1 / rowSums( Q1 )
-		Psi1 <- update_Psi( Theta, Q1, alpha, algorithm = Psi_algorithm )
+		Psi1 <- update_Psi( Theta, Q1, alpha )
                 Psi1 <- positive_definite( Psi1, tol_psi = tol_psi )
 		L1 <- t(chol( Psi1 ) )
 		R1 <- update_R( ThetaSR, Q1, L1 )
 	}
 	else {
-		Psi1 <- update_Psi( Theta, Q0, alpha, algorithm = Psi_algorithm )
+		Psi1 <- update_Psi( Theta, Q0, alpha )
 	        Psi1 <- positive_definite( Psi1, tol_psi = tol_psi )
 	        L1 <- t(chol( Psi1 ) )
 	        R1 <- update_R( ThetaSR, Q0, L1 )

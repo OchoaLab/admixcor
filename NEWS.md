@@ -127,3 +127,7 @@ Non-code updates:
   - Removed option `Q_type`, which is now always equal to `"random"`
   - Removed option `Q_algorithm`, which is now always equal to `"quadprog"`
   - Removed option `vertex_refine`, which is now always `FALSE`
+
+# admixcor 0.0.24.9000 (2024-11-24)
+
+- Functions `admixcor` and `admixcor2` removed options `L_algorithm` and `Psi_algorithm`, respectively.  These algorithm options now default to `"bvls"` when there is no penalization (`gamma = 0`, or `alpha = 0`, respectively), and default to `"glmnet"` otherwise.  Since `"bvls"` required no penalization before, the only new constraint is that now it is not possible to run `"glmnet"` without penalization, which was ill-advised anyway as it could result in errors or warnings.

@@ -105,11 +105,7 @@ validate_admixcor <- function( obj, n, K, v = 1 ) {
         validate_L( obj$L, K )
     validate_R( obj$R, K, I )
     # NOTE: we're not validating ThetaSR, that's ok, it's simple and not a worry (it was validated earlier)
-    expect_true( is.matrix( obj$Psi ) )
-    expect_equal( nrow( obj$Psi ), K )
-    expect_equal( ncol( obj$Psi ), K )
-    expect_true( min( obj$Psi ) >= 0 )
-    # expect_true( max( obj$Psi ) <= 1 ) # current algorithm doesn't enforce this
+    validate_Psi( obj$Psi, K )
     expect_true( is.numeric( obj$f ) )
     expect_equal( length( obj$f ), 1L )
     expect_true( obj$f >= 0 )
@@ -329,10 +325,12 @@ test_that( 'vertex_inds, stretch_Q, stretch_Psi works', {
         Psi2 <- stretch_Psi( Psi, data$S_inv )
     )
     validate_Psi( Psi2, K )
+    # TODO: min(Psi, 0) (`actual`) not equal to 0 (`expected`).
     expect_silent(
         Psi2 <- stretch_Psi( Psi, data2$S_inv )
     )
     validate_Psi( Psi2, K )
+    # TODO: min(Psi, 0) (`actual`) not equal to 0 (`expected`).
     expect_silent(
         Psi2 <- stretch_Psi( Psi, data3$S_inv )
     )
@@ -341,10 +339,12 @@ test_that( 'vertex_inds, stretch_Q, stretch_Psi works', {
         Psi2 <- stretch_Psi( Psi, data4$S_inv )
     )
     validate_Psi( Psi2, K )
+    # TODO: min(Psi, 0) (`actual`) not equal to 0 (`expected`).
     expect_silent(
         Psi2 <- stretch_Psi( Psi, data5$S_inv )
     )
     validate_Psi( Psi2, K )
+    # TODO: min(Psi, 0) (`actual`) not equal to 0 (`expected`).
     expect_silent(
         Psi2 <- stretch_Psi( Psi, data6$S_inv )
     )
@@ -412,19 +412,16 @@ test_that( 'update_L works', {
     L2 <- update_L( ThetaSR, Q2, R, gamma )
     # test basic expectations
     validate_L( L2, K )
-    # TODO x3: `maxPsi` (`actual`) not equal to 1 (`expected`).
-    # TODO: max(L) <= 1 is not TRUE
-
+    # TODO: max(Psi, 1) (`actual`) not equal to 1 (`expected`).
+    
     # now try exact solution (true ThetaSR, Q and R), here it is recoverable in theory if we don't penalize!
-    L2 <- update_L( ThetaSR, Q, R, 0 )
+    L2 <- update_L( ThetaSR, Q, R )
     expect_equal( L2, L )
 
-    # test bvls version (requires zero gamma), repeating both earlier tests
-    L2 <- update_L( ThetaSR, Q2, R, algorithm = 'bvls' )
+    # test zero gamma test with random Q
+    L2 <- update_L( ThetaSR, Q2, R )
     validate_L( L2, K )
-    # TODO x4: `maxPsi` (`actual`) not equal to 1 (`expected`).
-    L2 <- update_L( ThetaSR, Q, R, algorithm = 'bvls' )
-    expect_equal( L2, L )
+    # TODO: max(Psi, 1) (`actual`) not equal to 1 (`expected`).
 })
 
 test_that( 'update_Psi works', {
@@ -437,15 +434,12 @@ test_that( 'update_Psi works', {
     validate_Psi( Psi2, K )
 
     # now try exact solution (true Theta and Q), here it is recoverable in theory if we don't penalize!
-    Psi2 <- update_Psi( Theta, Q, 0 )
+    Psi2 <- update_Psi( Theta, Q )
     expect_equal( Psi2, Psi )
 
-    # test bvls version (requires zero alpha), repeating both earlier tests
-    Psi2 <- update_Psi( Theta, Q2, algorithm = 'bvls' )
+    # test zero alpha version with random Q
+    Psi2 <- update_Psi( Theta, Q2 )
     validate_Psi( Psi2, K )
-    # TODO x4: `maxPsi` (`actual`) not equal to 1 (`expected`).
-    Psi2 <- update_Psi( Theta, Q, algorithm = 'bvls' )
-    expect_equal( Psi2, Psi )
 })
 
 test_that( 'update_Q works', {
@@ -487,41 +481,34 @@ test_that( 'admixcor works', {
     # for this test, we don't have to fully converge (even in toy data it sometimes takes too long)
     # this stops in a single iteration in tests!
     tol <- 1e-2 # default ~1e-8
-    # first test default regularized version
+    
+    # first test default unregularized version
     expect_silent(
         obj <- admixcor( Theta, K, tol = tol )
     )
-    ## obj <- admixcor( Theta, K, tol = tol, verbose = TRUE ) # for testing
     validate_admixcor( obj, n, K )
-    # TODO: `maxPsi` (`actual`) not equal to 1 (`expected`).
     
-    # now test no regularization version, where some things may be singular if we're not careful
+    # now test regularized versions
     expect_silent(
-        obj <- admixcor( Theta, K, tol = tol, gamma = 0 )
+        obj <- admixcor( Theta, K, tol = tol, gamma = gamma )
     )
     validate_admixcor( obj, n, K )
-    # TODO: max(L) <= 1 is not TRUE
-
-    # now test no regularization version, where some things may be singular if we're not careful
     expect_silent(
-        obj <- admixcor( Theta, K, tol = tol, delta = 0 )
+        obj <- admixcor( Theta, K, tol = tol, delta = delta )
     )
     validate_admixcor( obj, n, K )
-
-    # now test no regularization version, where some things may be singular if we're not careful
     expect_silent(
-        obj <- admixcor( Theta, K, tol = tol, gamma = 0, delta = 0 )
+        obj <- admixcor( Theta, K, tol = tol, gamma = gamma, delta = delta )
     )
     validate_admixcor( obj, n, K )
-    # TODO: `maxPsi` (`actual`) not equal to 1 (`expected`).
 
     # ditto L initializations, try non-default versions now (identity is default)
     # in this case didn't test unregularized edge cases, but meh, will do if there is a clear need later
     expect_silent(
         obj <- admixcor( Theta, K, tol = tol, L_type = 'uniform' )
     )
+    # TODO: Error in `quadprog::solve.QP(D, d, C, c, meq)`: matrix D in quadratic function is not positive definite!
     validate_admixcor( obj, n, K )
-    # TODO x2: `maxPsi` (`actual`) not equal to 1 (`expected`).
     expect_silent(
         obj <- admixcor( Theta, K, tol = tol, L_type = 'diagrandom' )
     )
@@ -529,15 +516,8 @@ test_that( 'admixcor works', {
     expect_silent(
         obj <- admixcor( Theta, K, tol = tol, L_type = 'random' )
     )
+    # TODO x2: Error in `quadprog::solve.QP(D, d, C, c, meq)`: matrix D in quadratic function is not positive definite!
     validate_admixcor( obj, n, K )
-    # TODO: `maxPsi` (`actual`) not equal to 1 (`expected`).
-
-    # and L algorithms!
-    expect_silent(
-        obj <- admixcor( Theta, K, tol = tol, L_algorithm = 'bvls' )
-    )
-    validate_admixcor( obj, n, K )
-    # TODO: `maxPsi` (`actual`) not equal to 1 (`expected`).
 
     # repeat every previous test with `stretch = TRUE`
     expect_silent(
@@ -545,15 +525,15 @@ test_that( 'admixcor works', {
     )
     validate_admixcor( obj, n, K )
     expect_silent(
-        obj <- admixcor( Theta, K, tol = tol, gamma = 0, stretch = TRUE )
+        obj <- admixcor( Theta, K, tol = tol, gamma = gamma, stretch = TRUE )
     )
     validate_admixcor( obj, n, K )
     expect_silent(
-        obj <- admixcor( Theta, K, tol = tol, delta = 0, stretch = TRUE )
+        obj <- admixcor( Theta, K, tol = tol, delta = delta, stretch = TRUE )
     )
     validate_admixcor( obj, n, K )
     expect_silent(
-        obj <- admixcor( Theta, K, tol = tol, gamma = 0, delta = 0, stretch = TRUE )
+        obj <- admixcor( Theta, K, tol = tol, gamma = gamma, delta = delta, stretch = TRUE )
     )
     validate_admixcor( obj, n, K )
     expect_silent(
@@ -563,13 +543,10 @@ test_that( 'admixcor works', {
     expect_silent(
         obj <- admixcor( Theta, K, tol = tol, L_type = 'diagrandom', stretch = TRUE )
     )
+    # TODO: Error in `quadprog::solve.QP(D, d, C, c, meq)`: matrix D in quadratic function is not positive definite!
     validate_admixcor( obj, n, K )
     expect_silent(
         obj <- admixcor( Theta, K, tol = tol, L_type = 'random', stretch = TRUE )
-    )
-    validate_admixcor( obj, n, K )
-    expect_silent(
-        obj <- admixcor( Theta, K, tol = tol, L_algorithm = 'bvls', stretch = TRUE )
     )
     validate_admixcor( obj, n, K )
 })
@@ -613,12 +590,6 @@ test_that( 'admixcor2 works', {
     )
     validate_admixcor( obj, n, K, v = 2 )
 
-    # and Psi algorithms!
-    expect_silent(
-        obj <- admixcor2( Theta, K, tol = tol, Psi_algorithm = 'bvls' )
-    )
-    validate_admixcor( obj, n, K, v = 2 )
-
     # repeat all previous tests with `stretch = TRUE`
     expect_silent(
         obj <- admixcor2( Theta, K, tol = tol, stretch = TRUE )
@@ -634,10 +605,6 @@ test_that( 'admixcor2 works', {
     validate_admixcor( obj, n, K, v = 2 )
     expect_silent(
         obj <- admixcor2( Theta, K, tol = tol, alpha = alpha, beta = beta, stretch = TRUE )
-    )
-    validate_admixcor( obj, n, K, v = 2 )
-    expect_silent(
-        obj <- admixcor2( Theta, K, tol = tol, Psi_algorithm = 'bvls', stretch = TRUE )
     )
     validate_admixcor( obj, n, K, v = 2 )
 })
@@ -680,19 +647,12 @@ test_that( 'admixcor2 reformed works', {
         obj <- admixcor2( Theta, K, tol = tol, reformed = TRUE, L_type = 'random' )
     )
     validate_admixcor( obj, n, K, v = 2 )
-
-    # and Psi algorithms!
-    expect_silent(
-        obj <- admixcor2( Theta, K, tol = tol, reformed = TRUE, Psi_algorithm = 'bvls' )
-    )
-    validate_admixcor( obj, n, K, v = 2 )
 })
 
 test_that( 'admixcor2 works in full run with small K', {
     # here we want a fuller run, which in practice resulted in some errors we want to learn how to avoid; thus the only change is we use the default tolerance
     # ideally we run this with K=2, but meh, benchmarks assume K=3 elsewhere
     # focus on cases of highest interest
-    # default `Psi_algorithm = 'glmnet'` is key to these errors
     
     # test regularized versions only
     expect_silent(

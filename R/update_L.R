@@ -1,8 +1,5 @@
 # update L (square root of Psi)
-update_L <- function( ThetaSR, Q, R, gamma = 0, algorithm = c('glmnet', 'bvls') ) {
-    # process options
-    algorithm <- match.arg( algorithm )
-
+update_L <- function( ThetaSR, Q, R, gamma = 0 ) {
     # uses bounded variable least squares (bvls), which is equivalent to our problem without regularization; glmnet in theory solves our problem with regularization!
     # bvls solves exactly the requirement that the lower bound be zero and upper bound be 1, and exactly forces lower triangle to be zero during optimization
 
@@ -21,13 +18,11 @@ update_L <- function( ThetaSR, Q, R, gamma = 0, algorithm = c('glmnet', 'bvls') 
     A <- A[ , indexes ]
     # now get solutions!
     # solve system of equations with non-negative constraint, or both [0,1] bounds
-    if ( algorithm == 'bvls' ) {
-        if ( gamma != 0 )
-            stop( '`L_algorithm == "bvls"` requires `gamma = 0`' )
+    if ( gamma == 0 ) {
         # length of x, needed to set bounds
         lx <- K * ( K + 1 ) / 2
         x <- bvls::bvls( A, b, rep.int( 0, lx ), rep.int( 1, lx ) )$x
-    } else if ( algorithm == 'glmnet' ) {
+    } else {
         if ( K == 1L ) {
             # glmnet doesn't work to solve a single variable, super annoying!
             # I wrote my own solver for that nearly trivial case
