@@ -6,7 +6,7 @@ admixcor2 <- function(
 		     beta = 0,
                      gamma = 0,
                      delta = 0,
-                     L_type = c('identity', 'uniform', 'diagrandom', 'random'),
+                     L_type = c('diagrandom', 'random'),
                      tol = sqrt( .Machine$double.eps ), # 1e-15
 		     tol_psi = sqrt( .Machine$double.eps ), # 1e-15
                      nstep_max = 100000,
@@ -68,24 +68,17 @@ admixcor2 <- function(
             break
         
         # apply the updates, one at the time
+        Psi1 <- update_Psi( Theta, Q0, alpha )
+        Psi1 <- positive_definite( Psi1, tol_psi = tol_psi )
+        L1 <- t(chol( Psi1 ) )
+        R1 <- update_R( ThetaSR, Q0, L1 )
+        Q1 <- update_Q( ThetaSR, L1, R1, delta, I )
 	if ( stretch ) {
-		Q1 <- update_Q( ThetaSR, L0, R0, delta, I )
-		Q1 <- stretch_Q( Q1, ties_none = ties_none, tol = tol_stretch )$Q
-		Q1[Q1 < 0] <- 0
-		Q1 <- Q1 / rowSums( Q1 )
-		Psi1 <- update_Psi( Theta, Q1, alpha )
-                Psi1 <- positive_definite( Psi1, tol_psi = tol_psi )
-		L1 <- t(chol( Psi1 ) )
-		R1 <- update_R( ThetaSR, Q1, L1 )
+            Q1 <- stretch_Q( Q1, ties_none = ties_none, tol = tol_stretch )$Q
+            Q1[Q1 < 0] <- 0
+            Q1 <- Q1 / rowSums( Q1 )
 	}
-	else {
-		Psi1 <- update_Psi( Theta, Q0, alpha )
-	        Psi1 <- positive_definite( Psi1, tol_psi = tol_psi )
-	        L1 <- t(chol( Psi1 ) )
-	        R1 <- update_R( ThetaSR, Q0, L1 )
-	        Q1 <- update_Q( ThetaSR, L1, R1, delta, I )
-	}
-
+        
         # calculate step sizes, to assess convergence
 	ndQ <- norm( Q0 - Q1, "F" )^2
         

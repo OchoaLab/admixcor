@@ -1,5 +1,5 @@
-update_Q <- function( ThetaSR, L, R, delta, I ) {
-
+update_Q <- function( ThetaSR, L, R, delta, I, delta2 = 1e-6 ) {
+    
     # first set up the problem to resemble a linear regression for Q, of the form Ax=b
     # Q %*% ( L %*% R ) = ThetaSR
     # transpose to best match desired eq setup
@@ -13,17 +13,21 @@ update_Q <- function( ThetaSR, L, R, delta, I ) {
     Q <- matrix( 0, n, K )
 
     # calculate some matrices shared by all individuals
-    #D <- crossprod( A ) + delta * I # equivalent to below
-    D <- tcrossprod( L ) + delta * I
-    # hack-correct D if needed, a minimal alteration so we don't have to repeat runs that previously succeeded
+    #D <- crossprod( A ) + delta * I # equivalent to below when delta!=0
+    # if delta=0, construct a "factored version" that solves some singularity problems only observed in that case
+    # in fact, L is also singular, so try a generalized inverse in those cases?
+    factorized <- FALSE
     if ( delta == 0 ) {
-        eps <- 1e-2 # sqrt( .Machine$double.eps )
-        indexes <- diag( D ) < eps
-        if ( any( indexes ) ) {
-            # set things that are too small to the smallest non-zero value that is guaranteed to pass (make D posdef)
-            diag( D )[ indexes ] <- eps
-        }
+        D <- MASS::ginv( t( L ) )
+        factorized <- TRUE
+        # calculate a mildly regularized version in case of errors, which sadly occur somewhat frequently
+        D2 <- tcrossprod( L ) + delta2 * I
+    } else {
+        D <- tcrossprod( L ) + delta * I
+        # errors never happen in this case, but this has to be defined
+        D2 <- D
     }
+    
     # build constraint matrix (called Amat in solve.QP)
     # NOTE: these are the same across iterations so could be built outside loop to make more efficient!
     C <- cbind( 1, I, -I )
@@ -42,9 +46,15 @@ update_Q <- function( ThetaSR, L, R, delta, I ) {
         # unfortunately this varies per individual because b varies
         # NOTE: is it missing a minus sign??? (that's what wikipedia suggests, have to check against quadprog package).  NO, quadprog has minus sign built in, but wikipedia doesn't
         d <- drop( crossprod( A, b ) )
-        # NOTE: consider pre-factorizing D into "R-inv", to share for all individuals (but it will change across iterations)
-        x <- quadprog::solve.QP( D, d, C, c, meq )$solution
         
+        # try the problem we want to solve, though when delta==0 we may have unexpected errors
+        x <- try(
+            quadprog::solve.QP( D, d, C, c, meq, factorized = factorized )$solution,
+            silent = TRUE
+        )
+        # if there was an error, use this mildly regularized version never causes errors!
+        if ( inherits( x, "try-error" ) )
+            x <- quadprog::solve.QP( D2, d, C, c, meq )$solution
         # save column in desired place
         Q[ i, ] <- x
     }

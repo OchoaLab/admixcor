@@ -131,3 +131,10 @@ Non-code updates:
 # admixcor 0.0.24.9000 (2024-11-24)
 
 - Functions `admixcor` and `admixcor2` removed options `L_algorithm` and `Psi_algorithm`, respectively.  These algorithm options now default to `"bvls"` when there is no penalization (`gamma = 0`, or `alpha = 0`, respectively), and default to `"glmnet"` otherwise.  Since `"bvls"` required no penalization before, the only new constraint is that now it is not possible to run `"glmnet"` without penalization, which was ill-advised anyway as it could result in errors or warnings.
+
+# admixcor 0.0.25.9000 (2024-11-24)
+
+- Functions `admixcor` and `admixcor2`:
+  - Option `L_type` removed possible values `"identity"` and `"uniform"`, which in unit tests were associated with optimization problems (by initializing to overly symmetric solutions that do not favor one permutation over the others).
+  - Internally changed order of updates (R, L, Q) when `stretch = TRUE`, to match non-stretching cases, which also seems to behave better avoiding strange errors.
+  - Internal function `update_Q` now handles `delta = 0` case better, practically avoiding errors entirely in all cases.

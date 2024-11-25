@@ -5,7 +5,7 @@ initialize <- function(
                        Theta,
                        K,
                        n,
-                       L_type = c('identity', 'uniform', 'diagrandom', 'random')
+                       L_type = c('diagrandom', 'random')
                        ) {
     # process options
     L_type <- match.arg( L_type )
@@ -15,15 +15,7 @@ initialize <- function(
     Q <- Q / rowSums( Q )
 
     # initialize L
-    if ( L_type == 'uniform' ) {
-        # make sure final Psi values don't exceed 1
-        # all values 1/sqrt(K), ensure Psi is between 0 and 1
-        L <- matrix( 1 / sqrt( K ), K, K )
-        # ensure this is like cholesky
-        L[ upper.tri( L ) ] <- 0
-    } else if ( L_type == 'identity' ) {
-        L <- diag( 1, K, K )
-    } else if ( L_type == 'diagrandom' ) {
+    if ( L_type == 'diagrandom' ) {
         L <- diag( stats::runif( K ), K, K )
     } else if ( L_type == 'random' ) {
         # random values between 0 and 1/sqrt(K), ensure Psi is between 0 and 1

@@ -4,7 +4,7 @@ admixcor <- function(
                      K,
                      gamma = 0,
                      delta = 0,
-                     L_type = c('identity', 'uniform', 'diagrandom', 'random'),
+                     L_type = c('diagrandom', 'random'),
                      tol = sqrt( .Machine$double.eps ), # 1e-15
                      nstep_max = 100000,
                      report_freq = 1000,
@@ -57,18 +57,13 @@ admixcor <- function(
             break
         
         # apply the updates, one at the time
+        R1 <- update_R( ThetaSR, Q0, L0 )
+        L1 <- update_L( ThetaSR, Q0, R1, gamma )
+        Q1 <- update_Q( ThetaSR, L1, R1, delta, I )
 	if ( stretch ) {
-		Q1 <- update_Q( ThetaSR, L0, R0, delta, I )
-		Q1 <- stretch_Q( Q1, ties_none = ties_none, tol = tol_stretch )$Q
-		Q1[Q1 < 0] <- 0
-		Q1 <- Q1 / rowSums( Q1 )
-		L1 <- update_L( ThetaSR, Q1, R0, gamma )
-		R1 <- update_R( ThetaSR, Q1, L1 )
-	}
-	else {
-		R1 <- update_R( ThetaSR, Q0, L0 )
-	        L1 <- update_L( ThetaSR, Q0, R1, gamma )
-		Q1 <- update_Q( ThetaSR, L1, R1, delta, I )
+            Q1 <- stretch_Q( Q1, ties_none = ties_none, tol = tol_stretch )$Q
+            Q1[Q1 < 0] <- 0
+            Q1 <- Q1 / rowSums( Q1 )
 	}
         # calculate step sizes, to assess convergence
 	ndQ <- norm( Q0 - Q1, "F" )^2
