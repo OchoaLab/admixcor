@@ -508,30 +508,6 @@ test_that( 'admixcor works', {
     )
     validate_admixcor( obj, n, K )
     # TODO x4: max(Psi, 1) (`actual`) not equal to 1 (`expected`).
-
-    # repeat every previous test with `stretch = TRUE`
-    expect_silent(
-        obj <- admixcor( Theta, K, tol = tol, stretch = TRUE )
-    )
-    validate_admixcor( obj, n, K )
-    expect_silent(
-        obj <- admixcor( Theta, K, tol = tol, gamma = gamma, stretch = TRUE )
-    )
-    # TODO: max(Psi, 1) (`actual`) not equal to 1 (`expected`).
-    validate_admixcor( obj, n, K )
-    expect_silent(
-        obj <- admixcor( Theta, K, tol = tol, delta = delta, stretch = TRUE )
-    )
-    validate_admixcor( obj, n, K )
-    # TODO: max(Psi, 1) (`actual`) not equal to 1 (`expected`).
-    expect_silent(
-        obj <- admixcor( Theta, K, tol = tol, gamma = gamma, delta = delta, stretch = TRUE )
-    )
-    validate_admixcor( obj, n, K )
-    expect_silent(
-        obj <- admixcor( Theta, K, tol = tol, L_type = 'random', stretch = TRUE )
-    )
-    validate_admixcor( obj, n, K )
 })
 
 test_that( 'admixcor2 works', {
@@ -563,30 +539,6 @@ test_that( 'admixcor2 works', {
     expect_silent(
         obj <- admixcor2( Theta, K, tol = tol, L_type = 'random' )
     )
-    validate_admixcor( obj, n, K, v = 2 )
-
-    # repeat all previous tests with `stretch = TRUE`
-    expect_silent(
-        obj <- admixcor2( Theta, K, tol = tol, stretch = TRUE )
-    )
-    validate_admixcor( obj, n, K, v = 2 )
-#    expect_silent(
-    obj <- admixcor2( Theta, K, tol = tol, alpha = alpha, stretch = TRUE )
-    #    )
-    # TODO x5: from glmnet C++ code (error code -1); Convergence for 1th lambda value not reached after maxit=100000 iterations; solutions for larger lambdas returned.  an empty model has been returned; probably a convergence issue
-    # TODO: Error: from glmnet C++ code (error code 7777); All used predictors have zero variance
-    # TODO: `obj <- admixcor2(Theta, K, tol = tol, alpha = alpha, stretch = TRUE)` produced warnings.
-    validate_admixcor( obj, n, K, v = 2 )
-    expect_silent(
-        obj <- admixcor2( Theta, K, tol = tol, beta = beta, stretch = TRUE )
-    )
-    validate_admixcor( obj, n, K, v = 2 )
-    #    expect_silent(
-    obj <- admixcor2( Theta, K, tol = tol, alpha = alpha, beta = beta, stretch = TRUE )
-    #    )
-    # TODO x4: from glmnet C++ code (error code -1); Convergence for 1th lambda value not reached after maxit=100000 iterations; solutions for larger lambdas returned.  an empty model has been returned; probably a convergence issue
-    # TODO: `... <- NULL` produced warnings.
-    # TODO: Error: from glmnet C++ code (error code 7777); All used predictors have zero variance
     validate_admixcor( obj, n, K, v = 2 )
 })
 

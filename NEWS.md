@@ -138,3 +138,8 @@ Non-code updates:
   - Option `L_type` removed possible values `"identity"` and `"uniform"`, which in unit tests were associated with optimization problems (by initializing to overly symmetric solutions that do not favor one permutation over the others).
   - Internally changed order of updates (R, L, Q) when `stretch = TRUE`, to match non-stretching cases, which also seems to behave better avoiding strange errors.
   - Internal function `update_Q` now handles `delta = 0` case better, practically avoiding errors entirely in all cases.
+
+# admixcor 0.0.26.9000 (2024-12-17)
+
+- Functions `admixcor` and `admixcor2` removed option `stretch`, which now defaults to `TRUE`
+

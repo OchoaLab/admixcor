@@ -12,7 +12,6 @@ admixcor2 <- function(
                      nstep_max = 100000,
                      report_freq = 1000,
 		     reformed = FALSE,
-		     stretch = FALSE,
 		     ties_none = FALSE,
 		     tol_stretch = -0.01
                      ) {
@@ -73,11 +72,11 @@ admixcor2 <- function(
         L1 <- t(chol( Psi1 ) )
         R1 <- update_R( ThetaSR, Q0, L1 )
         Q1 <- update_Q( ThetaSR, L1, R1, delta, I )
-	if ( stretch ) {
-            Q1 <- stretch_Q( Q1, ties_none = ties_none, tol = tol_stretch )$Q
-            Q1[Q1 < 0] <- 0
-            Q1 <- Q1 / rowSums( Q1 )
-	}
+        # apply stretching
+        Q1 <- stretch_Q( Q1, ties_none = ties_none, tol = tol_stretch )$Q
+        # adjust stretching due to tolerance for negative values
+        Q1[Q1 < 0] <- 0
+        Q1 <- Q1 / rowSums( Q1 )
         
         # calculate step sizes, to assess convergence
 	ndQ <- norm( Q0 - Q1, "F" )^2
