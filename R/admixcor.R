@@ -9,7 +9,8 @@ admixcor <- function(
                      nstep_max = 100000,
                      report_freq = 1000,
                      ties_none = FALSE,
-		     tol_stretch = -0.01
+		     tol_stretch = -0.01,
+                     restart_singular = FALSE
                      ) {
     # process options
     L_type <- match.arg( L_type )
@@ -61,15 +62,26 @@ admixcor <- function(
         # apply the updates, one at the time
         R1 <- update_R( ThetaSR, Q0, L0 )
         L1 <- update_L( ThetaSR, Q0, R1, gamma )
-        obj <- update_Q( ThetaSR, L1, R1, delta, I )
+        obj <- update_Q( ThetaSR, L1, R1, delta, I, restart_singular = restart_singular )
         Q1 <- obj$Q
         Q_errors1 <- obj$errors # stats
         L_singular1 <- obj$L_singular
-        # apply stretching
-        Q1 <- stretch_Q( Q1, ties_none = ties_none, tol = tol_stretch )$Q
-        # adjust stretching due to tolerance for negative values
-        Q1[Q1 < 0] <- 0
-        Q1 <- Q1 / rowSums( Q1 )
+        # in this new mode, if we encounter a singular case we scrap the current solution and draw a completely new one, essentially start from scratch again (but without restarting iteration count)
+        # while we could re-draw only Q, this risks a bad L still influencing the R we pick and therefore the next Q, so instead we re-draw everything!
+        if ( restart_singular && L_singular1 ) {
+            Vars <- initialize( ThetaSR, K, n, L_type )
+            Q1 <- Vars$Q
+            L1 <- Vars$L
+            R1 <- Vars$R
+            # NOTE: in the log we will know if a restart occurred because the iteration will be marked with `L_singular = TRUE`
+        } else {
+            # (skip stretching if we reset)
+            # apply stretching
+            Q1 <- stretch_Q( Q1, ties_none = ties_none, tol = tol_stretch )$Q
+            # adjust stretching due to tolerance for negative values
+            Q1[Q1 < 0] <- 0
+            Q1 <- Q1 / rowSums( Q1 )
+        }
         
         # calculate step sizes, to assess convergence
 	ndQ <- norm( Q0 - Q1, "F" )^2

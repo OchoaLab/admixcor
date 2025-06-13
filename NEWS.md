@@ -146,3 +146,8 @@ Non-code updates:
 # admixcor 0.0.27.9000 (2025-06-13)
 
 - Functions `admixcor` and `admixcor2` added columns `L_singular` and `Q_error_rate` to output log table.
+
+# admixcor 0.0.28.9000 (2025-06-13)
+
+- Functions `admixcor` and `admixcor2` added option `restart_singular` to re-draw solutions if singularity is encountered instead the default that tries to regularize bad solutions and results in bad performance.
+

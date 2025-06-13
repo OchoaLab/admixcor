@@ -1,4 +1,4 @@
-update_Q <- function( ThetaSR, L, R, delta, I, delta2 = 1e-6 ) {
+update_Q <- function( ThetaSR, L, R, delta, I, delta2 = 1e-6, restart_singular = FALSE ) {
     
     # first set up the problem to resemble a linear regression for Q, of the form Ax=b
     # Q %*% ( L %*% R ) = ThetaSR
@@ -16,6 +16,10 @@ update_Q <- function( ThetaSR, L, R, delta, I, delta2 = 1e-6 ) {
     # remember if L was singular
     # https://stackoverflow.com/questions/24961983/how-to-check-if-a-matrix-has-an-inverse-in-the-r-language
     L_singular <- inherits(try(solve(L), silent = TRUE), "try-error")
+
+    # in new mode, break out of here if we encounter a singular case, and re-draw everything outside
+    if ( restart_singular && L_singular )
+        return( list( errors = 0, L_singular = L_singular ) )
 
     # calculate some matrices shared by all individuals
     #D <- crossprod( A ) + delta * I # equivalent to below when delta!=0

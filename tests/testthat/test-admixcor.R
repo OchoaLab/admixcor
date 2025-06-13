@@ -512,6 +512,39 @@ test_that( 'admixcor works', {
     # TODO x4: max(Psi, 1) (`actual`) not equal to 1 (`expected`).
 })
 
+test_that( 'admixcor works with `restart_singular = TRUE`', {
+    # for this test, we don't have to fully converge (even in toy data it sometimes takes too long)
+    # this stops in a single iteration in tests!
+    tol <- 1e-2 # default ~1e-8
+    
+    # first test default unregularized version
+    expect_silent(
+        obj <- admixcor( Theta, K, tol = tol, restart_singular = TRUE )
+    )
+    validate_admixcor( obj, n, K )
+    
+    # now test regularized versions
+    expect_silent(
+        obj <- admixcor( Theta, K, tol = tol, gamma = gamma, restart_singular = TRUE )
+    )
+    validate_admixcor( obj, n, K )
+    expect_silent(
+        obj <- admixcor( Theta, K, tol = tol, delta = delta, restart_singular = TRUE )
+    )
+    validate_admixcor( obj, n, K )
+    expect_silent(
+        obj <- admixcor( Theta, K, tol = tol, gamma = gamma, delta = delta, restart_singular = TRUE )
+    )
+    validate_admixcor( obj, n, K )
+
+    # ditto L initializations, try non-default versions now (diagrandom is default)
+    # in this case didn't test unregularized edge cases, but meh, will do if there is a clear need later
+    expect_silent(
+        obj <- admixcor( Theta, K, tol = tol, L_type = 'random', restart_singular = TRUE )
+    )
+    validate_admixcor( obj, n, K )
+})
+
 test_that( 'admixcor2 works', {
     # for this test, we don't have to fully converge (even in toy data it sometimes takes too long)
     # this stops in a single iteration in tests!
@@ -540,6 +573,38 @@ test_that( 'admixcor2 works', {
     # in this case didn't test unregularized edge cases, but meh, will do if there is a clear need later
     expect_silent(
         obj <- admixcor2( Theta, K, tol = tol, L_type = 'random' )
+    )
+    validate_admixcor( obj, n, K, v = 2 )
+})
+
+test_that( 'admixcor2 works with `restart_singular = TRUE`', {
+    # for this test, we don't have to fully converge (even in toy data it sometimes takes too long)
+    # this stops in a single iteration in tests!
+    tol <- 1e-2 # default ~1e-8
+    # first test default version with no regularization
+    expect_silent(
+        obj <- admixcor2( Theta, K, tol = tol, restart_singular = TRUE )
+    )
+    validate_admixcor( obj, n, K, v = 2 )
+    
+    # now test regularized versions
+    expect_silent(
+        obj <- admixcor2( Theta, K, tol = tol, alpha = alpha, restart_singular = TRUE )
+    )
+    validate_admixcor( obj, n, K, v = 2 )
+    expect_silent(
+        obj <- admixcor2( Theta, K, tol = tol, beta = beta, restart_singular = TRUE )
+    )
+    validate_admixcor( obj, n, K, v = 2 )
+    expect_silent(
+        obj <- admixcor2( Theta, K, tol = tol, alpha = alpha, beta = beta, restart_singular = TRUE )
+    )
+    validate_admixcor( obj, n, K, v = 2 )
+
+    # ditto L initializations, try non-default versions now (diagrandom is default)
+    # in this case didn't test unregularized edge cases, but meh, will do if there is a clear need later
+    expect_silent(
+        obj <- admixcor2( Theta, K, tol = tol, L_type = 'random', restart_singular = TRUE )
     )
     validate_admixcor( obj, n, K, v = 2 )
 })
@@ -594,6 +659,26 @@ test_that( 'admixcor2 works in full run with small K', {
     validate_admixcor( obj, n, K, v = 2 )
     expect_silent(
         obj <- admixcor2( Theta, K, alpha = alpha, beta = beta )
+    )
+    validate_admixcor( obj, n, K, v = 2 )
+})
+
+test_that( 'admixcor2 works in full run with small K and with `restart_singular = TRUE`', {
+    # here we want a fuller run, which in practice resulted in some errors we want to learn how to avoid; thus the only change is we use the default tolerance
+    # ideally we run this with K=2, but meh, benchmarks assume K=3 elsewhere
+    # focus on cases of highest interest
+    
+    # test regularized versions only
+    expect_silent(
+        obj <- admixcor2( Theta, K, alpha = alpha, restart_singular = TRUE )
+    )
+    validate_admixcor( obj, n, K, v = 2 )
+    expect_silent(
+        obj <- admixcor2( Theta, K, beta = beta, restart_singular = TRUE )
+    )
+    validate_admixcor( obj, n, K, v = 2 )
+    expect_silent(
+        obj <- admixcor2( Theta, K, alpha = alpha, beta = beta, restart_singular = TRUE )
     )
     validate_admixcor( obj, n, K, v = 2 )
 })
