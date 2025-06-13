@@ -48,6 +48,9 @@ admixcor <- function(
     ndQs <- NA
     objs <- f0
     dobjs <- NA
+    # zeroeth iteration tells me if this was initialized as singular!
+    L_singulars <- inherits(try(solve(L0), silent = TRUE), "try-error")
+    Q_error_rates <- NA
 
     while ( ndQ > tol ) {
         # increment counter, break if needed
@@ -58,7 +61,10 @@ admixcor <- function(
         # apply the updates, one at the time
         R1 <- update_R( ThetaSR, Q0, L0 )
         L1 <- update_L( ThetaSR, Q0, R1, gamma )
-        Q1 <- update_Q( ThetaSR, L1, R1, delta, I )
+        obj <- update_Q( ThetaSR, L1, R1, delta, I )
+        Q1 <- obj$Q
+        Q_errors1 <- obj$errors # stats
+        L_singular1 <- obj$L_singular
         # apply stretching
         Q1 <- stretch_Q( Q1, ties_none = ties_none, tol = tol_stretch )$Q
         # adjust stretching due to tolerance for negative values
@@ -87,6 +93,8 @@ admixcor <- function(
             ndQs <- c( ndQs, ndQ )
             objs <- rbind( objs, f0 ) # this is a matrix!
             dobjs <- c( dobjs, df )
+            L_singulars <- c( L_singulars, L_singular1 )
+            Q_error_rates <- c( Q_error_rates, mean( Q_errors1 ) ) # this is a vector, just report mean
 	}
 
         # decide if this is better than previous best, based on total objective (including penalties)
@@ -99,6 +107,8 @@ admixcor <- function(
             nstep_best <- nstep
             ndQ_best <- ndQ
             df_best <- df
+            L_singular_best <- L_singular1
+            Q_errors_best <- mean( Q_errors1 )
 	}
     }
 
@@ -107,11 +117,15 @@ admixcor <- function(
     ndQs <- c( ndQs, ndQ )
     objs <- rbind( objs, f0 ) # this is a matrix!
     dobjs <- c( dobjs, df )
+    L_singulars <- c( L_singulars, L_singular1 )
+    Q_error_rates <- c( Q_error_rates, mean( Q_errors1 ) ) # this is a vector, just report mean
     # compare data for best
     nsteps <- c( nsteps, nstep_best )
     ndQs <- c( ndQs, ndQ_best )
     objs <- rbind( objs, f_best ) # this is a matrix!
     dobjs <- c( dobjs, df_best )
+    L_singulars <- c( L_singulars, L_singular_best )
+    Q_error_rates <- c( Q_error_rates, Q_errors_best )
     # finalize report
     report <- tibble::tibble(
                           nstep = nsteps,
@@ -121,7 +135,9 @@ admixcor <- function(
                           dobj = dobjs,
                           O = objs[,2L],
                           pL = objs[,3L],
-                          pQ = objs[,4L]
+                          pQ = objs[,4L],
+                          L_singular = L_singulars,
+                          Q_error_rate = Q_error_rates
                       )
     
     # compose final Psi

@@ -12,6 +12,11 @@ update_Q <- function( ThetaSR, L, R, delta, I, delta2 = 1e-6 ) {
     K <- ncol( ThetaSR )
     Q <- matrix( 0, n, K )
 
+    # troubleshooting stats
+    # remember if L was singular
+    # https://stackoverflow.com/questions/24961983/how-to-check-if-a-matrix-has-an-inverse-in-the-r-language
+    L_singular <- inherits(try(solve(L), silent = TRUE), "try-error")
+
     # calculate some matrices shared by all individuals
     #D <- crossprod( A ) + delta * I # equivalent to below when delta!=0
     # if delta=0, construct a "factored version" that solves some singularity problems only observed in that case
@@ -37,6 +42,9 @@ update_Q <- function( ThetaSR, L, R, delta, I, delta2 = 1e-6 ) {
     meq <- 1
 
     # TODO: below each little `d` could probably be precomputed as a matrix, but we'll save testing that idea for later
+
+    # for troubleshooting, keep track of errors (I believe due to singularity)
+    errors <- rep.int( FALSE, n )
     
     # solve each row of Q (i.e. column of t(Q)) separately
     for ( i in 1L : n ) {
@@ -53,11 +61,14 @@ update_Q <- function( ThetaSR, L, R, delta, I, delta2 = 1e-6 ) {
             silent = TRUE
         )
         # if there was an error, use this mildly regularized version never causes errors!
-        if ( inherits( x, "try-error" ) )
+        if ( inherits( x, "try-error" ) ) {
             x <- quadprog::solve.QP( D2, d, C, c, meq )$solution
+            # mark error case
+            errors[ i ] <- TRUE
+        }
         # save column in desired place
         Q[ i, ] <- x
     }
 
-    return( Q )
+    return( list( Q = Q, errors = errors, L_singular = L_singular ) )
 }

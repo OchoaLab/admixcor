@@ -143,3 +143,6 @@ Non-code updates:
 
 - Functions `admixcor` and `admixcor2` removed option `stretch`, which now defaults to `TRUE`
 
+# admixcor 0.0.27.9000 (2025-06-13)
+
+- Functions `admixcor` and `admixcor2` added columns `L_singular` and `Q_error_rate` to output log table.

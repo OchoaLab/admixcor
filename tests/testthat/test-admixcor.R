@@ -443,12 +443,14 @@ test_that( 'update_Psi works', {
 test_that( 'update_Q works', {
     # test on random data first, make sure it doesn't break; all are globally set
     # here we use exact ThetaSR from real data, but random L for test
-    Q2 <- update_Q( ThetaSR, L2, R, delta, I )
+    obj <- update_Q( ThetaSR, L2, R, delta, I )
+    Q2 <- obj$Q
     # test basic expectations
     validate_Q( Q2, n, K )
     
     # now try exact solution (true ThetaSR, L and R), here it is recoverable in theory if we don't penalize!
-    Q2 <- update_Q( ThetaSR, L, R, 0, I )
+    obj <- update_Q( ThetaSR, L, R, 0, I )
+    Q2 <- obj$Q
     expect_equal( Q2, Q )
 })
 
