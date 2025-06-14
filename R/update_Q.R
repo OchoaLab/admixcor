@@ -1,4 +1,4 @@
-update_Q <- function( ThetaSR, L, R, delta, I, delta2 = 1e-6, restart_singular = FALSE ) {
+update_Q <- function( ThetaSR, L, R, delta, I ) {
     
     # first set up the problem to resemble a linear regression for Q, of the form Ax=b
     # Q %*% ( L %*% R ) = ThetaSR
@@ -17,24 +17,20 @@ update_Q <- function( ThetaSR, L, R, delta, I, delta2 = 1e-6, restart_singular =
     # https://stackoverflow.com/questions/24961983/how-to-check-if-a-matrix-has-an-inverse-in-the-r-language
     L_singular <- inherits(try(solve(L), silent = TRUE), "try-error")
 
-    # in new mode, break out of here if we encounter a singular case, and re-draw everything outside
-    if ( restart_singular && L_singular )
-        return( list( errors = 0, L_singular = L_singular ) )
+    # break out of here if we encounter a singular case, and re-draw everything outside
+    if ( L_singular )
+        return( list( L_singular = L_singular ) )
 
     # calculate some matrices shared by all individuals
     #D <- crossprod( A ) + delta * I # equivalent to below when delta!=0
-    # if delta=0, construct a "factored version" that solves some singularity problems only observed in that case
-    # in fact, L is also singular, so try a generalized inverse in those cases?
+    # if delta=0, construct a "factored version" that's supposed to be faster
     factorized <- FALSE
     if ( delta == 0 ) {
-        D <- MASS::ginv( t( L ) )
+        # L guaranteed to be non-singular if we've gotten this far
+        D <- solve( t( L ) )
         factorized <- TRUE
-        # calculate a mildly regularized version in case of errors, which sadly occur somewhat frequently
-        D2 <- tcrossprod( L ) + delta2 * I
     } else {
         D <- tcrossprod( L ) + delta * I
-        # errors never happen in this case, but this has to be defined
-        D2 <- D
     }
     
     # build constraint matrix (called Amat in solve.QP)
@@ -47,9 +43,6 @@ update_Q <- function( ThetaSR, L, R, delta, I, delta2 = 1e-6, restart_singular =
 
     # TODO: below each little `d` could probably be precomputed as a matrix, but we'll save testing that idea for later
 
-    # for troubleshooting, keep track of errors (I believe due to singularity)
-    errors <- rep.int( FALSE, n )
-    
     # solve each row of Q (i.e. column of t(Q)) separately
     for ( i in 1L : n ) {
         # get corresponding row of ThetaSR (column of its transpose)
@@ -59,20 +52,9 @@ update_Q <- function( ThetaSR, L, R, delta, I, delta2 = 1e-6, restart_singular =
         # NOTE: is it missing a minus sign??? (that's what wikipedia suggests, have to check against quadprog package).  NO, quadprog has minus sign built in, but wikipedia doesn't
         d <- drop( crossprod( A, b ) )
         
-        # try the problem we want to solve, though when delta==0 we may have unexpected errors
-        x <- try(
-            quadprog::solve.QP( D, d, C, c, meq, factorized = factorized )$solution,
-            silent = TRUE
-        )
-        # if there was an error, use this mildly regularized version never causes errors!
-        if ( inherits( x, "try-error" ) ) {
-            x <- quadprog::solve.QP( D2, d, C, c, meq )$solution
-            # mark error case
-            errors[ i ] <- TRUE
-        }
-        # save column in desired place
-        Q[ i, ] <- x
+        # perform the desired calculation, save column in desired place
+        Q[ i, ] <- quadprog::solve.QP( D, d, C, c, meq, factorized = factorized )$solution
     }
 
-    return( list( Q = Q, errors = errors, L_singular = L_singular ) )
+    return( list( Q = Q, L_singular = L_singular ) )
 }

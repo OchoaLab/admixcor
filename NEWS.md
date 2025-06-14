@@ -151,3 +151,6 @@ Non-code updates:
 
 - Functions `admixcor` and `admixcor2` added option `restart_singular` to re-draw solutions if singularity is encountered instead the default that tries to regularize bad solutions and results in bad performance.
 
+# admixcor 0.0.29.9000 (2025-06-14)
+
+- Functions `admixcor` and `admixcor2` removed option `restart_singular` (it now defaults to TRUE) and removed column `Q_error_rate` to output log table.
