@@ -3,7 +3,6 @@ admixcor <- function(
                      Theta,
                      K,
                      gamma = 0,
-                     delta = 0,
                      L_type = c('diagrandom', 'random'),
                      tol = sqrt( .Machine$double.eps ), # 1e-15
                      nstep_max = 100000,
@@ -19,7 +18,7 @@ admixcor <- function(
 
     # decompose Theta for "linear" objective
     ThetaSR <- theta_square_root( Theta, K )
-    # normalize gamma to be on a more similar scale to delta, etc
+    # normalize gamma to be on a more similar scale to delta (though now delta is zero), etc
     # takes into account that dim(L) = (K, K) is much smaller than dim(Q) = dim(ThetaSR) = (n, K)
     gamma <- gamma * n / K
     
@@ -30,7 +29,7 @@ admixcor <- function(
     R0 <- Vars$R
 
     # calculate objective of this initial (very bad) solution
-    f0 <- objective( ThetaSR, Q0, L0, R0, gamma, delta )
+    f0 <- objective( ThetaSR, Q0, L0, R0, gamma )
 
     # constant used in regularized expressions
     I <- diag( 1, K, K )
@@ -60,7 +59,7 @@ admixcor <- function(
         # apply the updates, one at the time
         R1 <- update_R( ThetaSR, Q0, L0 )
         L1 <- update_L( ThetaSR, Q0, R1, gamma )
-        obj <- update_Q( ThetaSR, L1, R1, delta, I )
+        obj <- update_Q( ThetaSR, L1, R1, I )
         Q1 <- obj$Q
         L_singular1 <- obj$L_singular
         # if we encounter a singular case we scrap the current solution and draw a completely new one, essentially start from scratch again (but without restarting iteration count)
@@ -84,7 +83,7 @@ admixcor <- function(
 	ndQ <- norm( Q0 - Q1, "F" )^2
         
         # calculate new objective
-	f1 <- objective( ThetaSR, Q1, L1, R1, gamma, delta )
+	f1 <- objective( ThetaSR, Q1, L1, R1, gamma )
         # and its delta too (this matches norm formulations above)
         # use first value only (total objective, including penalty terms!)
         df <- abs( f1[1L] - f0[1L] )
@@ -140,7 +139,6 @@ admixcor <- function(
                           dobj = dobjs,
                           O = objs[,2L],
                           pL = objs[,3L],
-                          pQ = objs[,4L],
                           L_singular = L_singulars
                       )
     

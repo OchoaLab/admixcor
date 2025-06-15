@@ -3,9 +3,7 @@ admixcor2 <- function(
                      Theta,
                      K,
 		     alpha = 0,
-		     beta = 0,
                      gamma = 0,
-                     delta = 0,
                      L_type = c('diagrandom', 'random'),
                      tol = sqrt( .Machine$double.eps ), # 1e-15
 		     tol_psi = sqrt( .Machine$double.eps ), # 1e-15
@@ -39,8 +37,8 @@ admixcor2 <- function(
 	Theta <- ThetaSR %*% t(ThetaSR)
 
     # calculate objective of this initial (very bad) solution
-    f0 <- objective( ThetaSR, Q0, L0, R0, gamma, delta )
-    g0 <- objective2( Theta, Q0, Psi0, alpha, beta  )
+    f0 <- objective( ThetaSR, Q0, L0, R0, gamma )
+    #g0 <- objective2( Theta, Q0, Psi0, alpha )
 
     # constant used in regularized expressions
     I <- diag( 1, K, K )
@@ -73,7 +71,7 @@ admixcor2 <- function(
         Psi1 <- positive_definite( Psi1, tol_psi = tol_psi )
         L1 <- t(chol( Psi1 ) )
         R1 <- update_R( ThetaSR, Q0, L1 )
-        obj <- update_Q( ThetaSR, L1, R1, delta, I )
+        obj <- update_Q( ThetaSR, L1, R1, I )
         Q1 <- obj$Q
         L_singular1 <- obj$L_singular
         # if we encounter a singular case we scrap the current solution and draw a completely new one, essentially start from scratch again (but without restarting iteration count)
@@ -97,7 +95,7 @@ admixcor2 <- function(
 	ndQ <- norm( Q0 - Q1, "F" )^2
         
         # calculate new objective
-	f1 <- objective( ThetaSR, Q1, L1, R1, gamma, delta )
+	f1 <- objective( ThetaSR, Q1, L1, R1, gamma )
         # and its delta too (this matches norm formulations above)
         # use first value only (total objective, including penalty terms!)
         df <- abs( f1[1L] - f0[1L] )
@@ -153,7 +151,6 @@ admixcor2 <- function(
                           dobj = dobjs,
                           O = objs[,2L],
                           pPsi = objs[,3L],
-                          pQ = objs[,4L],
                           L_singular = L_singulars
                       )
     

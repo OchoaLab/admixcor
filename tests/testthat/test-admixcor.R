@@ -14,9 +14,7 @@ Psi <- diag( runif( K ), K )
 Theta <- tcrossprod( Q %*% Psi, Q )
 # some default values for the regularization parameters; light regularization is ideal
 alpha <- 1e-5
-beta <- 1e-5
 gamma <- 1e-5
-delta <- 1e-5
 # constant used in regularized expressions
 I <- diag( 1, K, K )
 # a random quanitity for quadcomp tests
@@ -198,9 +196,9 @@ test_that( 'objective works', {
     # in this test match is exact, so objective should be zero
     # (but only if penalties are zero too!)
     expect_silent( 
-        f <- objective( ThetaSR, Q, L, R, gamma = 0, delta = 0 )
+        f <- objective( ThetaSR, Q, L, R, gamma = 0 )
     )
-    expect_equal( f, rep.int( 0, 4L ) )
+    expect_equal( f, rep.int( 0, 3L ) )
 
     # now try an inexact match
     # this shoudn't alter global values in other scopes, right?
@@ -208,13 +206,13 @@ test_that( 'objective works', {
     R <- diag( 1, K )
     # passed Q2 instead of Q here too, so it's totally random
     expect_silent( 
-        f <- objective( ThetaSR, Q2, L, R, gamma, delta )
+        f <- objective( ThetaSR, Q2, L, R, gamma )
     )
     expect_true( is.numeric( f ) )
-    expect_equal( length( f ), 4L )
+    expect_equal( length( f ), 3L )
     expect_true( min( f ) >= 0 )
     expect_true( f[2L] <= n*K ) # unnormalized has this max assuming all values are between 0-1 (not strictly true for linearized objective, because of rotation, but let's see...)
-    expect_equal( f[1L], sum( f[2L:4L] ) ) # first is sum of the rest
+    expect_equal( f[1L], sum( f[2L:3L] ) ) # first is sum of the rest
 })
 
 validate_stretch_Q <- function( data, n, K, tol ) {
@@ -443,13 +441,13 @@ test_that( 'update_Psi works', {
 test_that( 'update_Q works', {
     # test on random data first, make sure it doesn't break; all are globally set
     # here we use exact ThetaSR from real data, but random L for test
-    obj <- update_Q( ThetaSR, L2, R, delta, I )
+    obj <- update_Q( ThetaSR, L2, R, I )
     Q2 <- obj$Q
     # test basic expectations
     validate_Q( Q2, n, K )
     
-    # now try exact solution (true ThetaSR, L and R), here it is recoverable in theory if we don't penalize!
-    obj <- update_Q( ThetaSR, L, R, 0, I )
+    # now try exact solution (true ThetaSR, L and R), here it is recoverable in theory since we don't penalize!
+    obj <- update_Q( ThetaSR, L, R, I )
     Q2 <- obj$Q
     expect_equal( Q2, Q )
 })
@@ -493,14 +491,6 @@ test_that( 'admixcor works', {
         obj <- admixcor( Theta, K, tol = tol, gamma = gamma )
     )
     validate_admixcor( obj, n, K )
-    expect_silent(
-        obj <- admixcor( Theta, K, tol = tol, delta = delta )
-    )
-    validate_admixcor( obj, n, K )
-    expect_silent(
-        obj <- admixcor( Theta, K, tol = tol, gamma = gamma, delta = delta )
-    )
-    validate_admixcor( obj, n, K )
     # TODO: max(Psi, 1) (`actual`) not equal to 1 (`expected`).
 
     # ditto L initializations, try non-default versions now (diagrandom is default)
@@ -525,14 +515,6 @@ test_that( 'admixcor2 works', {
     # now test regularized versions
     expect_silent(
         obj <- admixcor2( Theta, K, tol = tol, alpha = alpha )
-    )
-    validate_admixcor( obj, n, K, v = 2 )
-    expect_silent(
-        obj <- admixcor2( Theta, K, tol = tol, beta = beta )
-    )
-    validate_admixcor( obj, n, K, v = 2 )
-    expect_silent(
-        obj <- admixcor2( Theta, K, tol = tol, alpha = alpha, beta = beta )
     )
     validate_admixcor( obj, n, K, v = 2 )
 
@@ -560,15 +542,6 @@ test_that( 'admixcor2 reformed works', {
         obj <- admixcor2( Theta, K, tol = tol, reformed = TRUE, alpha = alpha )
     )
     validate_admixcor( obj, n, K, v = 2 )
-    expect_silent(
-        obj <- admixcor2( Theta, K, tol = tol, reformed = TRUE, beta = beta )
-    )
-    validate_admixcor( obj, n, K, v = 2 )
-    # TODO: max(Psi, 1) (`actual`) not equal to 1 (`expected`).
-    expect_silent(
-        obj <- admixcor2( Theta, K, tol = tol, reformed = TRUE, alpha = alpha, beta = beta )
-    )
-    validate_admixcor( obj, n, K, v = 2 )
 
     # ditto L initializations, try non-default versions now (diagrandom is default)
     # in this case didn't test unregularized edge cases, but meh, will do if there is a clear need later
@@ -588,14 +561,6 @@ test_that( 'admixcor2 works in full run with small K', {
         obj <- admixcor2( Theta, K, alpha = alpha )
     )
     # TODO: `obj <- admixcor2(Theta, K, alpha = alpha)` produced warnings.
-    validate_admixcor( obj, n, K, v = 2 )
-    expect_silent(
-        obj <- admixcor2( Theta, K, beta = beta )
-    )
-    validate_admixcor( obj, n, K, v = 2 )
-    expect_silent(
-        obj <- admixcor2( Theta, K, alpha = alpha, beta = beta )
-    )
     validate_admixcor( obj, n, K, v = 2 )
 })
 

@@ -1,4 +1,4 @@
-update_Q <- function( ThetaSR, L, R, delta, I ) {
+update_Q <- function( ThetaSR, L, R, I ) {
     
     # first set up the problem to resemble a linear regression for Q, of the form Ax=b
     # Q %*% ( L %*% R ) = ThetaSR
@@ -12,26 +12,14 @@ update_Q <- function( ThetaSR, L, R, delta, I ) {
     K <- ncol( ThetaSR )
     Q <- matrix( 0, n, K )
 
-    # troubleshooting stats
-    # remember if L was singular
-    # https://stackoverflow.com/questions/24961983/how-to-check-if-a-matrix-has-an-inverse-in-the-r-language
-    L_singular <- inherits(try(solve(L), silent = TRUE), "try-error")
-
     # break out of here if we encounter a singular case, and re-draw everything outside
-    if ( L_singular )
-        return( list( L_singular = L_singular ) )
+    # https://stackoverflow.com/questions/24961983/how-to-check-if-a-matrix-has-an-inverse-in-the-r-language
+    if ( inherits(try(solve(L), silent = TRUE), "try-error") )
+        return( list( L_singular = TRUE ) )
 
     # calculate some matrices shared by all individuals
-    #D <- crossprod( A ) + delta * I # equivalent to below when delta!=0
-    # if delta=0, construct a "factored version" that's supposed to be faster
-    factorized <- FALSE
-    if ( delta == 0 ) {
-        # L guaranteed to be non-singular if we've gotten this far
-        D <- solve( t( L ) )
-        factorized <- TRUE
-    } else {
-        D <- tcrossprod( L ) + delta * I
-    }
+    # L guaranteed to be non-singular if we've gotten this far
+    D <- solve( t( L ) )
     
     # build constraint matrix (called Amat in solve.QP)
     # NOTE: these are the same across iterations so could be built outside loop to make more efficient!
@@ -53,8 +41,8 @@ update_Q <- function( ThetaSR, L, R, delta, I ) {
         d <- drop( crossprod( A, b ) )
         
         # perform the desired calculation, save column in desired place
-        Q[ i, ] <- quadprog::solve.QP( D, d, C, c, meq, factorized = factorized )$solution
+        Q[ i, ] <- quadprog::solve.QP( D, d, C, c, meq, factorized = TRUE )$solution
     }
 
-    return( list( Q = Q, L_singular = L_singular ) )
+    return( list( Q = Q, L_singular = FALSE ) )
 }

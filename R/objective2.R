@@ -1,5 +1,5 @@
 #' @export
-objective2 <- function( Theta, Q, Psi, alpha, beta ) {
+objective2 <- function( Theta, Q, Psi, alpha ) {
     # original version (not linearized)
     ## # reconstruct Psi
     ## Psi <- tcrossprod( L )
@@ -11,9 +11,8 @@ objective2 <- function( Theta, Q, Psi, alpha, beta ) {
 
     # calculate penalty terms
     pPsi <- alpha * sum( diag( Psi ) )
-    pQ <- beta * norm( Q, "F" )^2
     # sum terms
-    O_total <- O + pPsi + pQ
+    O_total <- O + pPsi
     # return sum and parts
-    return( c( O_total, O, pPsi, pQ ) )
+    return( c( O_total, O, pPsi ) )
 }

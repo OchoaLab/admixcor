@@ -154,3 +154,7 @@ Non-code updates:
 # admixcor 0.0.29.9000 (2025-06-14)
 
 - Functions `admixcor` and `admixcor2` removed option `restart_singular` (it now defaults to TRUE) and removed column `Q_error_rate` to output log table.
+
+# admixcor 0.0.30.9000 (2025-06-15)
+
+- Functions `admixcor`, `admixcor2`, `objective` removed option `delta` (it now defaults to zero), and also `beta` in `admixcor2` and `objective2`.  Functions `objective` and `objective2` now return a vector with one less value (length 3 instead of 4).
