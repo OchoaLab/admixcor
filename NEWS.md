@@ -158,3 +158,11 @@ Non-code updates:
 # admixcor 0.0.30.9000 (2025-06-15)
 
 - Functions `admixcor`, `admixcor2`, `objective` removed option `delta` (it now defaults to zero), and also `beta` in `admixcor2` and `objective2`.  Functions `objective` and `objective2` now return a vector with one less value (length 3 instead of 4).
+
+# admixcor 0.0.31.9000 (2025-06-20)
+
+- Removed functions `admixcor2`, `objective2`, and internal function `projsplx`.
+  - `admixcor2` did not perform better than `admixcor`.
+  - `objective2` is only used by `admixcor2`.
+  - `projsplx` hadn't been used in a long time (was replaced by `quadprog`).
+  - Although `update_Psi` is also not being used, I decided to keep that one for now.

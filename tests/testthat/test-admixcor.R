@@ -367,27 +367,6 @@ test_that( 'initialize works', {
     validate_initialize( obj, n, K )
 })
 
-test_that( 'projsplx works', {
-    # naive function is applied one row at the time
-    q <- runif( K )
-    expect_silent(
-        q <- projsplx( q )
-    )
-    expect_equal( length( q ), K )
-    expect_true( min( q ) >= 0 )
-    expect_equal( sum( q ), 1 )
-    
-    # matrix version!
-    # here create an out of range Q
-    # (rows likely exceed one, don't sum to one in any case)
-    Q3 <- matrix( runif( n*K ), nrow = n, ncol = K )
-    expect_silent(
-        Q3 <- t( apply( Q3, 1L, projsplx ) )
-    )
-    # validate now!
-    validate_Q( Q3, n, K )
-})
-
 test_that( 'update_R works', {
     # test on random data first, make sure it doesn't break; all are globally set
     # here we use exact ThetaSR from real data, but random Q for test
@@ -500,67 +479,5 @@ test_that( 'admixcor works', {
     )
     validate_admixcor( obj, n, K )
     # TODO x4: max(Psi, 1) (`actual`) not equal to 1 (`expected`).
-})
-
-test_that( 'admixcor2 works', {
-    # for this test, we don't have to fully converge (even in toy data it sometimes takes too long)
-    # this stops in a single iteration in tests!
-    tol <- 1e-2 # default ~1e-8
-    # first test default version with no regularization
-    expect_silent(
-        obj <- admixcor2( Theta, K, tol = tol )
-    )
-    validate_admixcor( obj, n, K, v = 2 )
-    
-    # now test regularized versions
-    expect_silent(
-        obj <- admixcor2( Theta, K, tol = tol, alpha = alpha )
-    )
-    validate_admixcor( obj, n, K, v = 2 )
-
-    # ditto L initializations, try non-default versions now (diagrandom is default)
-    # in this case didn't test unregularized edge cases, but meh, will do if there is a clear need later
-    expect_silent(
-        obj <- admixcor2( Theta, K, tol = tol, L_type = 'random' )
-    )
-    validate_admixcor( obj, n, K, v = 2 )
-})
-
-
-test_that( 'admixcor2 reformed works', {
-    # for this test, we don't have to fully converge (even in toy data it sometimes takes too long)
-    # this stops in a single iteration in tests!
-    tol <- 1e-2 # default ~1e-8
-    # first test default version with no regularization
-    expect_silent(
-        obj <- admixcor2( Theta, K, tol = tol, reformed = TRUE )
-    )
-    validate_admixcor( obj, n, K, v = 2 )
-    
-    # now test regularized versions
-    expect_silent(
-        obj <- admixcor2( Theta, K, tol = tol, reformed = TRUE, alpha = alpha )
-    )
-    validate_admixcor( obj, n, K, v = 2 )
-
-    # ditto L initializations, try non-default versions now (diagrandom is default)
-    # in this case didn't test unregularized edge cases, but meh, will do if there is a clear need later
-    expect_silent(
-        obj <- admixcor2( Theta, K, tol = tol, reformed = TRUE, L_type = 'random' )
-    )
-    validate_admixcor( obj, n, K, v = 2 )
-})
-
-test_that( 'admixcor2 works in full run with small K', {
-    # here we want a fuller run, which in practice resulted in some errors we want to learn how to avoid; thus the only change is we use the default tolerance
-    # ideally we run this with K=2, but meh, benchmarks assume K=3 elsewhere
-    # focus on cases of highest interest
-    
-    # test regularized versions only
-    expect_silent(
-        obj <- admixcor2( Theta, K, alpha = alpha )
-    )
-    # TODO: `obj <- admixcor2(Theta, K, alpha = alpha)` produced warnings.
-    validate_admixcor( obj, n, K, v = 2 )
 })
 
