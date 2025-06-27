@@ -3,7 +3,7 @@ admixcor <- function(
                      Theta,
                      K,
                      gamma = 0,
-                     L_type = c('diagrandom', 'random'),
+                     L_type = c('diagrandom', 'random', 'diageven', 'diagevensqrt'),
                      tol = sqrt( .Machine$double.eps ), # 1e-15
                      nstep_max = 100000,
                      report_freq = 1000,

@@ -169,6 +169,8 @@ Non-code updates:
 
 # admixcor 0.0.32.9000 (2025-06-27)
 
+- Function `admixcor` added options:
+  - Option `L_type` can now also equal `"diageven"` and `"diagevensqrt"`.
 - Internal changes
   - Pulled L singularity test out of `update_Q`, simplifying the latter's return value, and reorganized main `admixcor` loop as needed
   - Made L singularity test its own internal function `is_singular` that gets tested, makes things more legible in main `admixcor` loop

@@ -1,11 +1,8 @@
-# L initialized to I
-# R is initialized to I
-
 initialize <- function(
                        Theta,
                        K,
                        n,
-                       L_type = c('diagrandom', 'random')
+                       L_type = c('diagrandom', 'random', 'diageven', 'diagevensqrt')
                        ) {
     # process options
     L_type <- match.arg( L_type )
@@ -17,6 +14,10 @@ initialize <- function(
     # initialize L
     if ( L_type == 'diagrandom' ) {
         L <- diag( stats::runif( K ), K, K )
+    } else if ( L_type == 'diageven' ) {
+        L <- diag( ( 1 : K ) / K, K, K )
+    } else if ( L_type == 'diagevensqrt' ) {
+        L <- diag( sqrt( ( 1 : K ) / K ), K, K )
     } else if ( L_type == 'random' ) {
         # random values between 0 and 1/sqrt(K), ensure Psi is between 0 and 1
         L <- matrix( stats::runif( K^2 ), K, K ) / sqrt(K)

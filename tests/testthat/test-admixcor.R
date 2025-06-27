@@ -374,6 +374,14 @@ test_that( 'initialize works', {
         obj <- initialize( Theta, K, n, L_type = 'random' )
     )
     validate_initialize( obj, n, K )
+    expect_silent(
+        obj <- initialize( Theta, K, n, L_type = 'diageven' )
+    )
+    validate_initialize( obj, n, K )
+    expect_silent(
+        obj <- initialize( Theta, K, n, L_type = 'diagevensqrt' )
+    )
+    validate_initialize( obj, n, K )
 })
 
 test_that( 'update_R works', {
@@ -486,5 +494,13 @@ test_that( 'admixcor works', {
     )
     validate_admixcor( obj, n, K )
     # TODO x4: max(Psi, 1) (`actual`) not equal to 1 (`expected`).
+    expect_silent(
+        obj <- admixcor( Theta, K, tol = tol, L_type = 'diageven' )
+    )
+    validate_admixcor( obj, n, K )
+    expect_silent(
+        obj <- admixcor( Theta, K, tol = tol, L_type = 'diagevensqrt' )
+    )
+    validate_admixcor( obj, n, K )
 })
 
