@@ -171,6 +171,7 @@ Non-code updates:
 
 - Function `admixcor` added options:
   - Option `L_type` can now also equal `"diageven"` and `"diagevensqrt"`.
+  - Option `Q_first` changes order of L and Q updates in iterations.  Default `FALSE` is previous behavior, L is updated first, so `L_type` value matters less in that case, it gets optimized early based on value of initial Q.  In contrast, `Q_first = TRUE` means initial Q matters less and `L_type` matters more.
 - Internal changes
   - Pulled L singularity test out of `update_Q`, simplifying the latter's return value, and reorganized main `admixcor` loop as needed
   - Made L singularity test its own internal function `is_singular` that gets tested, makes things more legible in main `admixcor` loop

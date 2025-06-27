@@ -502,5 +502,30 @@ test_that( 'admixcor works', {
         obj <- admixcor( Theta, K, tol = tol, L_type = 'diagevensqrt' )
     )
     validate_admixcor( obj, n, K )
+
+    # repeat everything with `Q_first = TRUE`, particularly L_types!
+    expect_silent(
+        obj <- admixcor( Theta, K, tol = tol, Q_first = TRUE )
+    )
+    validate_admixcor( obj, n, K )
+    # TODO: max(Psi, 1) (`actual`) not equal to 1 (`expected`).
+    expect_silent(
+        obj <- admixcor( Theta, K, tol = tol, Q_first = TRUE, gamma = gamma )
+    )
+    validate_admixcor( obj, n, K )
+    expect_silent(
+        obj <- admixcor( Theta, K, tol = tol, Q_first = TRUE, L_type = 'random' )
+    )
+    validate_admixcor( obj, n, K )
+    expect_silent(
+        obj <- admixcor( Theta, K, tol = tol, Q_first = TRUE, L_type = 'diageven' )
+    )
+    validate_admixcor( obj, n, K )
+    # TODO: max(Psi, 1) (`actual`) not equal to 1 (`expected`).
+    expect_silent(
+        obj <- admixcor( Theta, K, tol = tol, Q_first = TRUE, L_type = 'diagevensqrt' )
+    )
+    validate_admixcor( obj, n, K )
+    # TODO: max(Psi, 1) (`actual`) not equal to 1 (`expected`).
 })
 
