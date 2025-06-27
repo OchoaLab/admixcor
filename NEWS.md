@@ -172,3 +172,4 @@ Non-code updates:
 - Internal changes
   - Pulled L singularity test out of `update_Q`, simplifying the latter's return value, and reorganized main `admixcor` loop as needed
   - Made L singularity test its own internal function `is_singular` that gets tested, makes things more legible in main `admixcor` loop
+  - Refactored `update_Q` (less code, should have faster matrix products at the expense of slightly more memory temporarily)
