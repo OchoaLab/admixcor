@@ -12,13 +12,8 @@ update_Q <- function( ThetaSR, L, R, I ) {
     K <- ncol( ThetaSR )
     Q <- matrix( 0, n, K )
 
-    # break out of here if we encounter a singular case, and re-draw everything outside
-    # https://stackoverflow.com/questions/24961983/how-to-check-if-a-matrix-has-an-inverse-in-the-r-language
-    if ( inherits(try(solve(L), silent = TRUE), "try-error") )
-        return( list( L_singular = TRUE ) )
-
     # calculate some matrices shared by all individuals
-    # L guaranteed to be non-singular if we've gotten this far
+    # L guaranteed to be non-singular if we've gotten this far (was tested outside)
     D <- solve( t( L ) )
     
     # build constraint matrix (called Amat in solve.QP)
@@ -44,5 +39,5 @@ update_Q <- function( ThetaSR, L, R, I ) {
         Q[ i, ] <- quadprog::solve.QP( D, d, C, c, meq, factorized = TRUE )$solution
     }
 
-    return( list( Q = Q, L_singular = FALSE ) )
+    return( Q )
 }

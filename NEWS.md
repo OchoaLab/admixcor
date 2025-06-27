@@ -166,3 +166,9 @@ Non-code updates:
   - `objective2` is only used by `admixcor2`.
   - `projsplx` hadn't been used in a long time (was replaced by `quadprog`).
   - Although `update_Psi` is also not being used, I decided to keep that one for now.
+
+# admixcor 0.0.32.9000 (2025-06-27)
+
+- Internal changes
+  - Pulled L singularity test out of `update_Q`, simplifying the latter's return value, and reorganized main `admixcor` loop as needed
+  - Made L singularity test its own internal function `is_singular` that gets tested, makes things more legible in main `admixcor` loop

@@ -355,6 +355,15 @@ test_that( 'vertex_inds, stretch_Q, stretch_Psi works', {
     # TODO x2: min(Psi, 0) (`actual`) not equal to 0 (`expected`).
 })
 
+test_that( 'is_singular works', {
+    # trivial scalar versions
+    expect_true( is_singular( 0 ) )
+    expect_true( ! is_singular( 1 ) )
+    # trivial matrix versions
+    expect_true( is_singular( matrix( 0, K, K ) ) )
+    expect_true( ! is_singular( diag( 1, K, K ) ) )
+})
+
 test_that( 'initialize works', {
     # test all L_types!
     expect_silent(
@@ -420,14 +429,12 @@ test_that( 'update_Psi works', {
 test_that( 'update_Q works', {
     # test on random data first, make sure it doesn't break; all are globally set
     # here we use exact ThetaSR from real data, but random L for test
-    obj <- update_Q( ThetaSR, L2, R, I )
-    Q2 <- obj$Q
+    Q2 <- update_Q( ThetaSR, L2, R, I )
     # test basic expectations
     validate_Q( Q2, n, K )
     
     # now try exact solution (true ThetaSR, L and R), here it is recoverable in theory since we don't penalize!
-    obj <- update_Q( ThetaSR, L, R, I )
-    Q2 <- obj$Q
+    Q2 <- update_Q( ThetaSR, L, R, I )
     expect_equal( Q2, Q )
 })
 
