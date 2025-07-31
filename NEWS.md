@@ -176,3 +176,7 @@ Non-code updates:
   - Pulled L singularity test out of `update_Q`, simplifying the latter's return value, and reorganized main `admixcor` loop as needed
   - Made L singularity test its own internal function `is_singular` that gets tested, makes things more legible in main `admixcor` loop
   - Refactored `update_Q` (less code, should have faster matrix products at the expense of slightly more memory temporarily)
+
+# admixcor 0.0.33.9000 (2025-07-31)
+
+- Function `admixcor` removed choice "random" for option `L_type`, which performed worst in the latest benchmarks (median behavior was ok, but produced more bad outliers than other cases).

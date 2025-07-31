@@ -186,7 +186,7 @@ L <- sqrt( Psi )
 # need true rotation too...
 R <- solve( L ) %*% MASS::ginv( Q ) %*% ThetaSR
 # NOTE: for exact solution, this R is automatically rotation (no need to additionally project to rotation space)
-# also create a random L used for tests, copying code from initialize.R with `L_type == 'random'`
+# also create a random L used for tests, copying code from initialize.R with old `L_type == 'random'` (now removed)
 L2 <- matrix( runif( K^2 ), K, K ) / sqrt(K)
 # ensure this is like cholesky
 L2[ upper.tri( L2 ) ] <- 0
@@ -371,10 +371,6 @@ test_that( 'initialize works', {
     )
     validate_initialize( obj, n, K )
     expect_silent(
-        obj <- initialize( Theta, K, n, L_type = 'random' )
-    )
-    validate_initialize( obj, n, K )
-    expect_silent(
         obj <- initialize( Theta, K, n, L_type = 'diageven' )
     )
     validate_initialize( obj, n, K )
@@ -490,11 +486,6 @@ test_that( 'admixcor works', {
     # ditto L initializations, try non-default versions now (diagrandom is default)
     # in this case didn't test unregularized edge cases, but meh, will do if there is a clear need later
     expect_silent(
-        obj <- admixcor( Theta, K, tol = tol, L_type = 'random' )
-    )
-    validate_admixcor( obj, n, K )
-    # TODO x4: max(Psi, 1) (`actual`) not equal to 1 (`expected`).
-    expect_silent(
         obj <- admixcor( Theta, K, tol = tol, L_type = 'diageven' )
     )
     validate_admixcor( obj, n, K )
@@ -511,10 +502,6 @@ test_that( 'admixcor works', {
     # TODO: max(Psi, 1) (`actual`) not equal to 1 (`expected`).
     expect_silent(
         obj <- admixcor( Theta, K, tol = tol, Q_first = TRUE, gamma = gamma )
-    )
-    validate_admixcor( obj, n, K )
-    expect_silent(
-        obj <- admixcor( Theta, K, tol = tol, Q_first = TRUE, L_type = 'random' )
     )
     validate_admixcor( obj, n, K )
     expect_silent(
