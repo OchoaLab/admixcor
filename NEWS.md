@@ -185,3 +185,7 @@ Non-code updates:
 
 - Function `admixcor` removed options `Q_first` (it is now hardcoded to previous `FALSE` value) and `L_type` (now hardcoded to `"diagevensqrt"`).  Median behavior of other options was comparable, but this combination was the only one have no high outliers over a range of `gamma` values and 50 replicates each.
   - Also changed default `report_freq = 1` (previously 1000).
+
+# admixcor 0.0.35.9000 (2025-08-01)
+
+- Function `admixcor` added option `runs` to run more than one starting point, returns solution with the best objective across runs.

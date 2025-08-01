@@ -7,6 +7,7 @@ admixcor <- function(
                      nstep_max = 100000,
                      report_freq = 1,
                      ties_none = FALSE,
+                     runs = 1,
 		     tol_stretch = -0.01
                      ) {
     # number of individuals is dimensions of Theta
@@ -17,109 +18,130 @@ admixcor <- function(
     # normalize gamma to be on a more similar scale to delta (though now delta is zero), etc
     # takes into account that dim(L) = (K, K) is much smaller than dim(Q) = dim(ThetaSR) = (n, K)
     gamma <- gamma * n / K
-    
-    # initialize other variables
-    Vars <- initialize( ThetaSR, K, n )
-    Q0 <- Vars$Q
-    L0 <- Vars$L
-    R0 <- Vars$R
-
-    # calculate objective of this initial (very bad) solution
-    f0 <- objective( ThetaSR, Q0, L0, R0, gamma )
 
     # constant used in regularized expressions
     I <- diag( 1, K, K )
-    
-    # initialize gradient norms to ensure first iteration occurs
-    ndQ <- Inf
+
+    # best objective over runs, update as sol gets better
     f_best <- Inf
-
-    # initialize counter
-    nstep <- 0
-
-    # initialize select values to save for report
-    # values of starting point
-    nsteps <- nstep
-    ndQs <- NA
-    objs <- f0
-    dobjs <- NA
-    # zeroeth iteration tells me if this was initialized as singular!
-    L_singulars <- is_singular( L0 )
     
-    while ( ndQ > tol ) {
-        # increment counter, break if needed
-        nstep <- nstep + 1
-	if ( nstep > nstep_max )
-            break
+    # initialize report values
+    nsteps <- c()
+    ndQs <- c()
+    objs <- c()
+    dobjs <- c()
+    L_singulars <- c()
+    log_runs <- c()
+
+    for ( run in 1 : runs ) {
         
-        # apply the updates, one at the time
-        R1 <- update_R( ThetaSR, Q0, L0 )
-        L1 <- update_L( ThetaSR, Q0, R1, gamma )
-        # re-draw everything if we encounter a singular case!
-        L_singular1 <- is_singular( L1 )
-        if ( L_singular1 ) {
-            # if we encounter a singular case we scrap the current solution and draw a completely new one, essentially start from scratch again (but without restarting iteration count)
-            # while we could re-draw only Q, this risks a bad L still influencing the R we pick and therefore the next Q, so instead we re-draw everything!
-            Vars <- initialize( ThetaSR, K, n )
-            Q1 <- Vars$Q
-            L1 <- Vars$L
-            R1 <- Vars$R
-            # NOTE: in the log we will know if a restart occurred because the iteration will be marked with `L_singular = TRUE`
-        } else {
-            Q1 <- update_Q( ThetaSR, L1, R1, I )
-            # apply stretching
-            Q1 <- stretch_Q( Q1, ties_none = ties_none, tol = tol_stretch )$Q
-            # adjust stretching due to tolerance for negative values
-            Q1[Q1 < 0] <- 0
-            Q1 <- Q1 / rowSums( Q1 )
+        # initialize run-specific variables
+        # Q is random (varies per run) but L and R are fixed
+        Vars <- initialize( ThetaSR, K, n )
+        Q0 <- Vars$Q
+        L0 <- Vars$L
+        R0 <- Vars$R
+
+        # calculate objective of this initial (very bad) solution (run-specific)
+        f0 <- objective( ThetaSR, Q0, L0, R0, gamma )
+
+        # initialize gradient norms to ensure first iteration occurs
+        # has to be reset after every run!
+        ndQ <- Inf
+
+        # initialize counter, run-specific!
+        nstep <- 0
+        # zeroeth iteration tells me if this was initialized as singular!
+        L_singular0 <- is_singular( L0 )
+
+        # add values of starting point to report
+        log_runs <- c( log_runs, run )
+        nsteps <- c( nsteps, nstep )
+        ndQs <- c( ndQs, NA )
+        objs <- rbind( objs, f0 ) # this is a matrix!
+        dobjs <- c( dobjs, NA )
+        L_singulars <- c( L_singulars, L_singular0 )
+        
+        while ( ndQ > tol ) {
+            # increment counter, break if needed
+            nstep <- nstep + 1
+            if ( nstep > nstep_max )
+                break
+            
+            # apply the updates, one at the time
+            R1 <- update_R( ThetaSR, Q0, L0 )
+            L1 <- update_L( ThetaSR, Q0, R1, gamma )
+            # re-draw everything if we encounter a singular case!
+            L_singular1 <- is_singular( L1 )
+            if ( L_singular1 ) {
+                # if we encounter a singular case we scrap the current solution and draw a completely new one, essentially start from scratch again (but without restarting iteration count)
+                # while we could re-draw only Q, this risks a bad L still influencing the R we pick and therefore the next Q, so instead we re-draw everything!
+                Vars <- initialize( ThetaSR, K, n )
+                Q1 <- Vars$Q
+                L1 <- Vars$L
+                R1 <- Vars$R
+                # NOTE: in the log we will know if a restart occurred because the iteration will be marked with `L_singular = TRUE`
+            } else {
+                Q1 <- update_Q( ThetaSR, L1, R1, I )
+                # apply stretching
+                Q1 <- stretch_Q( Q1, ties_none = ties_none, tol = tol_stretch )$Q
+                # adjust stretching due to tolerance for negative values
+                Q1[Q1 < 0] <- 0
+                Q1 <- Q1 / rowSums( Q1 )
+            }
+            
+            # calculate step sizes, to assess convergence
+            ndQ <- norm( Q0 - Q1, "F" )^2
+            
+            # calculate new objective
+            f1 <- objective( ThetaSR, Q1, L1, R1, gamma )
+            # and its delta too (this matches norm formulations above)
+            # use first value only (total objective, including penalty terms!)
+            df <- abs( f1[1L] - f0[1L] )
+
+            # update variables for next iteration
+            Q0 <- Q1
+            L0 <- L1
+            R0 <- R1
+            f0 <- f1
+
+            # update report infrequently
+            if ( nstep %% report_freq == 0 ) {
+                # increment report
+                log_runs <- c( log_runs, run )
+                nsteps <- c( nsteps, nstep )
+                ndQs <- c( ndQs, ndQ )
+                objs <- rbind( objs, f0 ) # this is a matrix!
+                dobjs <- c( dobjs, df )
+                L_singulars <- c( L_singulars, L_singular1 )
+            }
+
+            # decide if this is better than previous best, based on total objective (including penalties)
+            if ( f_best[1L] > f0[1L] ) {
+                f_best <- f0
+                Q_best <- Q0
+                L_best <- L0
+                R_best <- R0
+                # nice extra info, mostly for troubleshooting
+                run_best <- run
+                nstep_best <- nstep
+                ndQ_best <- ndQ
+                df_best <- df
+                L_singular_best <- L_singular1
+            }
         }
-        
-        # calculate step sizes, to assess convergence
-	ndQ <- norm( Q0 - Q1, "F" )^2
-        
-        # calculate new objective
-	f1 <- objective( ThetaSR, Q1, L1, R1, gamma )
-        # and its delta too (this matches norm formulations above)
-        # use first value only (total objective, including penalty terms!)
-        df <- abs( f1[1L] - f0[1L] )
 
-        # update variables for next iteration
-	Q0 <- Q1
-	L0 <- L1
-	R0 <- R1
-	f0 <- f1
-
-        # update report infrequently
-	if ( nstep %% report_freq == 0) {
-            # increment report
-            nsteps <- c( nsteps, nstep )
-            ndQs <- c( ndQs, ndQ )
-            objs <- rbind( objs, f0 ) # this is a matrix!
-            dobjs <- c( dobjs, df )
-            L_singulars <- c( L_singulars, L_singular1 )
-	}
-
-        # decide if this is better than previous best, based on total objective (including penalties)
-	if ( f_best[1L] > f0[1L] ) {
-            f_best <- f0
-            Q_best <- Q0
-            L_best <- L0
-            R_best <- R0
-            # nice extra info, mostly for troubleshooting
-            nstep_best <- nstep
-            ndQ_best <- ndQ
-            df_best <- df
-            L_singular_best <- L_singular1
-	}
+        # report final iteration info
+        log_runs <- c( log_runs, run )
+        nsteps <- c( nsteps, nstep )
+        ndQs <- c( ndQs, ndQ )
+        objs <- rbind( objs, f0 ) # this is a matrix!
+        dobjs <- c( dobjs, df )
+        L_singulars <- c( L_singulars, L_singular1 )
     }
-
-    # report final iteration info
-    nsteps <- c( nsteps, nstep )
-    ndQs <- c( ndQs, ndQ )
-    objs <- rbind( objs, f0 ) # this is a matrix!
-    dobjs <- c( dobjs, df )
-    L_singulars <- c( L_singulars, L_singular1 )
-    # compare data for best
+    
+    # repeat data of "best" solution at the end
+    log_runs <- c( log_runs, run_best )
     nsteps <- c( nsteps, nstep_best )
     ndQs <- c( ndQs, ndQ_best )
     objs <- rbind( objs, f_best ) # this is a matrix!
@@ -127,6 +149,7 @@ admixcor <- function(
     L_singulars <- c( L_singulars, L_singular_best )
     # finalize report
     report <- tibble::tibble(
+                          run = log_runs,
                           nstep = nsteps,
                           dQ = ndQs,
                           # treat matrix cases accordingly, extracting columns as needed
