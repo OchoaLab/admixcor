@@ -365,17 +365,8 @@ test_that( 'is_singular works', {
 })
 
 test_that( 'initialize works', {
-    # test all L_types!
     expect_silent(
-        obj <- initialize( Theta, K, n, L_type = 'diagrandom' )
-    )
-    validate_initialize( obj, n, K )
-    expect_silent(
-        obj <- initialize( Theta, K, n, L_type = 'diageven' )
-    )
-    validate_initialize( obj, n, K )
-    expect_silent(
-        obj <- initialize( Theta, K, n, L_type = 'diagevensqrt' )
+        obj <- initialize( Theta, K, n )
     )
     validate_initialize( obj, n, K )
 })
@@ -479,38 +470,6 @@ test_that( 'admixcor works', {
     # now test regularized versions
     expect_silent(
         obj <- admixcor( Theta, K, tol = tol, gamma = gamma )
-    )
-    validate_admixcor( obj, n, K )
-    # TODO: max(Psi, 1) (`actual`) not equal to 1 (`expected`).
-
-    # ditto L initializations, try non-default versions now (diagrandom is default)
-    # in this case didn't test unregularized edge cases, but meh, will do if there is a clear need later
-    expect_silent(
-        obj <- admixcor( Theta, K, tol = tol, L_type = 'diageven' )
-    )
-    validate_admixcor( obj, n, K )
-    expect_silent(
-        obj <- admixcor( Theta, K, tol = tol, L_type = 'diagevensqrt' )
-    )
-    validate_admixcor( obj, n, K )
-
-    # repeat everything with `Q_first = TRUE`, particularly L_types!
-    expect_silent(
-        obj <- admixcor( Theta, K, tol = tol, Q_first = TRUE )
-    )
-    validate_admixcor( obj, n, K )
-    # TODO: max(Psi, 1) (`actual`) not equal to 1 (`expected`).
-    expect_silent(
-        obj <- admixcor( Theta, K, tol = tol, Q_first = TRUE, gamma = gamma )
-    )
-    validate_admixcor( obj, n, K )
-    expect_silent(
-        obj <- admixcor( Theta, K, tol = tol, Q_first = TRUE, L_type = 'diageven' )
-    )
-    validate_admixcor( obj, n, K )
-    # TODO: max(Psi, 1) (`actual`) not equal to 1 (`expected`).
-    expect_silent(
-        obj <- admixcor( Theta, K, tol = tol, Q_first = TRUE, L_type = 'diagevensqrt' )
     )
     validate_admixcor( obj, n, K )
     # TODO: max(Psi, 1) (`actual`) not equal to 1 (`expected`).

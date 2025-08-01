@@ -3,17 +3,12 @@ admixcor <- function(
                      Theta,
                      K,
                      gamma = 0,
-                     L_type = c('diagrandom', 'diageven', 'diagevensqrt'),
-                     Q_first = FALSE,
                      tol = sqrt( .Machine$double.eps ), # 1e-15
                      nstep_max = 100000,
-                     report_freq = 1000,
+                     report_freq = 1,
                      ties_none = FALSE,
 		     tol_stretch = -0.01
                      ) {
-    # process options
-    L_type <- match.arg( L_type )
-    
     # number of individuals is dimensions of Theta
     n <- nrow( Theta )
 
@@ -24,7 +19,7 @@ admixcor <- function(
     gamma <- gamma * n / K
     
     # initialize other variables
-    Vars <- initialize( ThetaSR, K, n, L_type )
+    Vars <- initialize( ThetaSR, K, n )
     Q0 <- Vars$Q
     L0 <- Vars$L
     R0 <- Vars$R
@@ -59,47 +54,24 @@ admixcor <- function(
         
         # apply the updates, one at the time
         R1 <- update_R( ThetaSR, Q0, L0 )
-
-        if ( Q_first ) {
-            Q1 <- update_Q( ThetaSR, L0, R1, I )
+        L1 <- update_L( ThetaSR, Q0, R1, gamma )
+        # re-draw everything if we encounter a singular case!
+        L_singular1 <- is_singular( L1 )
+        if ( L_singular1 ) {
+            # if we encounter a singular case we scrap the current solution and draw a completely new one, essentially start from scratch again (but without restarting iteration count)
+            # while we could re-draw only Q, this risks a bad L still influencing the R we pick and therefore the next Q, so instead we re-draw everything!
+            Vars <- initialize( ThetaSR, K, n )
+            Q1 <- Vars$Q
+            L1 <- Vars$L
+            R1 <- Vars$R
+            # NOTE: in the log we will know if a restart occurred because the iteration will be marked with `L_singular = TRUE`
+        } else {
+            Q1 <- update_Q( ThetaSR, L1, R1, I )
             # apply stretching
             Q1 <- stretch_Q( Q1, ties_none = ties_none, tol = tol_stretch )$Q
             # adjust stretching due to tolerance for negative values
             Q1[Q1 < 0] <- 0
             Q1 <- Q1 / rowSums( Q1 )
-
-            L1 <- update_L( ThetaSR, Q1, R1, gamma )
-            # re-draw everything if we encounter a singular case!
-            L_singular1 <- is_singular( L1 )
-            if ( L_singular1 ) {
-                # if we encounter a singular case we scrap the current solution and draw a completely new one, essentially start from scratch again (but without restarting iteration count)
-                # while we could re-draw only Q, this risks a bad L still influencing the R we pick and therefore the next Q, so instead we re-draw everything!
-                Vars <- initialize( ThetaSR, K, n, L_type )
-                Q1 <- Vars$Q
-                L1 <- Vars$L
-                R1 <- Vars$R
-                # NOTE: in the log we will know if a restart occurred because the iteration will be marked with `L_singular = TRUE`
-            }
-        } else {
-            L1 <- update_L( ThetaSR, Q0, R1, gamma )
-            # re-draw everything if we encounter a singular case!
-            L_singular1 <- is_singular( L1 )
-            if ( L_singular1 ) {
-                # if we encounter a singular case we scrap the current solution and draw a completely new one, essentially start from scratch again (but without restarting iteration count)
-                # while we could re-draw only Q, this risks a bad L still influencing the R we pick and therefore the next Q, so instead we re-draw everything!
-                Vars <- initialize( ThetaSR, K, n, L_type )
-                Q1 <- Vars$Q
-                L1 <- Vars$L
-                R1 <- Vars$R
-                # NOTE: in the log we will know if a restart occurred because the iteration will be marked with `L_singular = TRUE`
-            } else {
-                Q1 <- update_Q( ThetaSR, L1, R1, I )
-                # apply stretching
-                Q1 <- stretch_Q( Q1, ties_none = ties_none, tol = tol_stretch )$Q
-                # adjust stretching due to tolerance for negative values
-                Q1[Q1 < 0] <- 0
-                Q1 <- Q1 / rowSums( Q1 )
-            }
         }
         
         # calculate step sizes, to assess convergence

@@ -180,3 +180,8 @@ Non-code updates:
 # admixcor 0.0.33.9000 (2025-07-31)
 
 - Function `admixcor` removed choice "random" for option `L_type`, which performed worst in the latest benchmarks (median behavior was ok, but produced more bad outliers than other cases).
+
+# admixcor 0.0.34.9000 (2025-08-01)
+
+- Function `admixcor` removed options `Q_first` (it is now hardcoded to previous `FALSE` value) and `L_type` (now hardcoded to `"diagevensqrt"`).  Median behavior of other options was comparable, but this combination was the only one have no high outliers over a range of `gamma` values and 50 replicates each.
+  - Also changed default `report_freq = 1` (previously 1000).
