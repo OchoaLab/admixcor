@@ -189,3 +189,8 @@ Non-code updates:
 # admixcor 0.0.35.9000 (2025-08-01)
 
 - Function `admixcor` added option `runs` to run more than one starting point, returns solution with the best objective across runs.
+
+# admixcor 0.0.36.9000 (2025-08-29)
+
+- Function `admixcor` removed option `runs` (kept previous default of just one run, there was no advantage to multiple runs in benchmarks)
+

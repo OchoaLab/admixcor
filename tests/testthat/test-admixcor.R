@@ -473,15 +473,5 @@ test_that( 'admixcor works', {
     )
     validate_admixcor( obj, n, K )
     # TODO: max(Psi, 1) (`actual`) not equal to 1 (`expected`).
-
-    # test with multiple runs
-    expect_silent(
-        obj <- admixcor( Theta, K, tol = tol, runs = 3 )
-    )
-    validate_admixcor( obj, n, K )
-    expect_silent(
-        obj <- admixcor( Theta, K, tol = tol, gamma = gamma, runs = 3 )
-    )
-    validate_admixcor( obj, n, K )
 })
 
