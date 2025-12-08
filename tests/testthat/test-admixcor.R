@@ -12,6 +12,8 @@ Q2 <- Q2 / rowSums( Q2 ) # normalize as they should be
 Psi <- diag( runif( K ), K )
 # create a Theta that goes with these matrices
 Theta <- tcrossprod( Q %*% Psi, Q )
+# and its EVD
+evd <- eigen( Theta )
 # some default values for the regularization parameters; light regularization is ideal
 alpha <- 1e-5
 gamma <- 1e-5
@@ -165,6 +167,19 @@ test_that( 'align_Q works', {
     expect_true( all( indexes %in% 1L : K ) )
 })
 
+test_that( 'theta_square_root_from_trunc_evd works', {
+    # does a dimensionality reduction too, so it's not an exact square root unless it was low rank and it is correct
+    expect_silent(
+        Theta_sqrt <- theta_square_root_from_trunc_evd( evd, K )
+    )
+    expect_true( is.matrix( Theta_sqrt ) )
+    expect_equal( nrow( Theta_sqrt ), n )
+    expect_equal( ncol( Theta_sqrt ), K )
+    # reconstruct theta, here it will be exact!
+    Theta_redone <- tcrossprod( Theta_sqrt )
+    expect_equal( Theta_redone, Theta )
+})
+
 test_that( 'theta_square_root works', {
     # does a dimensionality reduction too, so it's not an exact square root unless it was low rank and it is correct
     expect_silent(
@@ -179,7 +194,8 @@ test_that( 'theta_square_root works', {
 })
 
 # now that the above function was validated, use it to calculate square root
-ThetaSR <- theta_square_root( Theta, K )
+ThetaSR <- theta_square_root_from_trunc_evd( evd, K )
+#ThetaSR <- theta_square_root( Theta, K )
 # also calculate a few other true square root model parameters
 # this is correct only because true Psi is diagonal, otherwise ought to use Cholesky!
 L <- sqrt( Psi )
@@ -470,6 +486,25 @@ test_that( 'admixcor works', {
     # now test regularized versions
     expect_silent(
         obj <- admixcor( Theta, K, tol = tol, gamma = gamma )
+    )
+    validate_admixcor( obj, n, K )
+    # TODO: max(Psi, 1) (`actual`) not equal to 1 (`expected`).
+})
+
+test_that( 'admixcor works with EVD input', {
+    # for this test, we don't have to fully converge (even in toy data it sometimes takes too long)
+    # this stops in a single iteration in tests!
+    tol <- 1e-2 # default ~1e-8
+    
+    # first test default unregularized version
+    expect_silent(
+        obj <- admixcor( evd, K, tol = tol )
+    )
+    validate_admixcor( obj, n, K )
+    
+    # now test regularized versions
+    expect_silent(
+        obj <- admixcor( evd, K, tol = tol, gamma = gamma )
     )
     validate_admixcor( obj, n, K )
     # TODO: max(Psi, 1) (`actual`) not equal to 1 (`expected`).

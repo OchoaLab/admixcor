@@ -194,3 +194,6 @@ Non-code updates:
 
 - Function `admixcor` removed option `runs` (kept previous default of just one run, there was no advantage to multiple runs in benchmarks)
 
+# admixcor 0.0.37.9000 (2025-12-08)
+
+- Function `admixcor` now accepts output from `eigen` run on `Theta` as input, as an alternative to `Theta` itself.  Idea is the eigendecomposition of `Theta` may be computed more efficiently externally, perhaps without having to compute `Theta` at all, which reduces memory usage when the number of individuals is very large.

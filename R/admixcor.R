@@ -9,11 +9,19 @@ admixcor <- function(
                      ties_none = FALSE,
 		     tol_stretch = -0.01
                      ) {
-    # number of individuals is dimensions of Theta
-    n <- nrow( Theta )
-
-    # decompose Theta for "linear" objective
-    ThetaSR <- theta_square_root( Theta, K )
+    # new version has EVD calculated outside (ideally without ever having Theta explicitly)
+    if ( is.list( Theta ) ) {
+        # just have to transform data very slightly in this special case
+        ThetaSR <- theta_square_root_from_trunc_evd( Theta, K )
+    } else if ( is.matrix( Theta ) ) {
+        # decompose Theta for "linear" objective
+        ThetaSR <- theta_square_root( Theta, K )
+    } else
+        stop( 'Theta must be a matrix or a list with `vectors` and `values`!' )
+    
+    # number of individuals is number of rows of ThetaSR
+    n <- nrow( ThetaSR )
+    
     # normalize gamma to be on a more similar scale to delta (though now delta is zero), etc
     # takes into account that dim(L) = (K, K) is much smaller than dim(Q) = dim(ThetaSR) = (n, K)
     gamma <- gamma * n / K
