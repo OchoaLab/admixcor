@@ -30,7 +30,7 @@ update_L <- function( ThetaSR, Q, R, gamma = 0 ) {
         } else {
             # `alpha = 0`: use "ridge" penalty
             # reduced default tolerance of 1e-7 because exact solutions were not good enough
-            x <- glmnet::glmnet( A, b, alpha = 0, lambda = gamma, intercept = FALSE, lower.limits = 0, upper.limits = 1, thresh = 1e-20 )$beta[,1]
+            x <- glmnet::glmnet( A, b, alpha = 0, lambda = gamma, intercept = FALSE, lower.limits = 0, upper.limits = 1, control = list( thresh = 1e-20 ) )$beta[,1]
         }
     }
     # lastly, reform x into L, return that!

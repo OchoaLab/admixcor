@@ -508,5 +508,11 @@ test_that( 'admixcor works with EVD input', {
     )
     validate_admixcor( obj, n, K )
     # TODO: max(Psi, 1) (`actual`) not equal to 1 (`expected`).
+
+    # test new scaling option
+    expect_silent(
+        obj <- admixcor( evd, K, tol = tol, gamma = gamma, gamma_scale = FALSE )
+    )
+    validate_admixcor( obj, n, K )
 })
 

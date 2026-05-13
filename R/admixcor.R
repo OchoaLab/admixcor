@@ -3,6 +3,7 @@ admixcor <- function(
                      Theta,
                      K,
                      gamma = 0,
+                     gamma_scale = TRUE,
                      tol = sqrt( .Machine$double.eps ), # 1e-15
                      nstep_max = 100000,
                      report_freq = 1,
@@ -21,11 +22,13 @@ admixcor <- function(
     
     # number of individuals is number of rows of ThetaSR
     n <- nrow( ThetaSR )
-    
-    # normalize gamma to be on a more similar scale to delta (though now delta is zero), etc
-    # takes into account that dim(L) = (K, K) is much smaller than dim(Q) = dim(ThetaSR) = (n, K)
-    gamma <- gamma * n / K
 
+    # new results suggest this was a mistake, let's allow specifying without scaling
+    if ( gamma_scale )
+        # normalize gamma to be on a more similar scale to delta (though now delta is zero), etc
+        # takes into account that dim(L) = (K, K) is much smaller than dim(Q) = dim(ThetaSR) = (n, K)
+        gamma <- gamma * n / K
+    
     # constant used in regularized expressions
     I <- diag( 1, K, K )
 

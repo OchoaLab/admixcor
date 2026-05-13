@@ -197,3 +197,8 @@ Non-code updates:
 # admixcor 0.0.37.9000 (2025-12-08)
 
 - Function `admixcor` now accepts output from `eigen` run on `Theta` as input, as an alternative to `Theta` itself.  Idea is the eigendecomposition of `Theta` may be computed more efficiently externally, perhaps without having to compute `Theta` at all, which reduces memory usage when the number of individuals is very large.
+
+# admixcor 0.0.38.9000 (2026-05-13)
+
+- Function `admixcor` added option `gamma_scale`, to prevent default scaling by `n/K`.
+- Minor edits to `glmnet` commands in response to a deprecation on their end.
