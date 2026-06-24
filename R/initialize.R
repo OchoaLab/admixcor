@@ -1,5 +1,4 @@
 initialize <- function(
-                       Theta,
                        K,
                        n
                        ) {

@@ -11,9 +11,10 @@ Q2 <- Q2 / rowSums( Q2 ) # normalize as they should be
 # construct a random Psi, diagonal for simplicity
 Psi <- diag( runif( K ), K )
 # create a Theta that goes with these matrices
-Theta <- tcrossprod( Q %*% Psi, Q )
+# since new version doesn't use full theta, make sure we're including it sparingly in tests
+Theta_FULL <- tcrossprod( Q %*% Psi, Q )
 # and its EVD
-evd <- eigen( Theta )
+evd <- eigen( Theta_FULL )
 # some default values for the regularization parameters; light regularization is ideal
 alpha <- 1e-5
 gamma <- 1e-5
@@ -167,35 +168,21 @@ test_that( 'align_Q works', {
     expect_true( all( indexes %in% 1L : K ) )
 })
 
-test_that( 'theta_square_root_from_trunc_evd works', {
-    # does a dimensionality reduction too, so it's not an exact square root unless it was low rank and it is correct
-    expect_silent(
-        Theta_sqrt <- theta_square_root_from_trunc_evd( evd, K )
-    )
-    expect_true( is.matrix( Theta_sqrt ) )
-    expect_equal( nrow( Theta_sqrt ), n )
-    expect_equal( ncol( Theta_sqrt ), K )
-    # reconstruct theta, here it will be exact!
-    Theta_redone <- tcrossprod( Theta_sqrt )
-    expect_equal( Theta_redone, Theta )
-})
-
 test_that( 'theta_square_root works', {
     # does a dimensionality reduction too, so it's not an exact square root unless it was low rank and it is correct
     expect_silent(
-        Theta_sqrt <- theta_square_root( Theta, K )
+        Theta_sqrt <- theta_square_root( evd, K )
     )
     expect_true( is.matrix( Theta_sqrt ) )
     expect_equal( nrow( Theta_sqrt ), n )
     expect_equal( ncol( Theta_sqrt ), K )
     # reconstruct theta, here it will be exact!
     Theta_redone <- tcrossprod( Theta_sqrt )
-    expect_equal( Theta_redone, Theta )
+    expect_equal( Theta_redone, Theta_FULL )
 })
 
 # now that the above function was validated, use it to calculate square root
-ThetaSR <- theta_square_root_from_trunc_evd( evd, K )
-#ThetaSR <- theta_square_root( Theta, K )
+ThetaSR <- theta_square_root( evd, K )
 # also calculate a few other true square root model parameters
 # this is correct only because true Psi is diagonal, otherwise ought to use Cholesky!
 L <- sqrt( Psi )
@@ -382,7 +369,7 @@ test_that( 'is_singular works', {
 
 test_that( 'initialize works', {
     expect_silent(
-        obj <- initialize( Theta, K, n )
+        obj <- initialize( K, n )
     )
     validate_initialize( obj, n, K )
 })
@@ -417,24 +404,6 @@ test_that( 'update_L works', {
     L2 <- update_L( ThetaSR, Q2, R )
     validate_L( L2, K )
     # TODO x5: max(Psi, 1) (`actual`) not equal to 1 (`expected`).
-})
-
-test_that( 'update_Psi works', {
-    # test the default glmnet first...
-    
-    # test on random data first, make sure it doesn't break; all are globally set
-    # here we use true Theta, but random Q for test
-    Psi2 <- update_Psi( Theta, Q2, alpha )
-    # test basic expectations
-    validate_Psi( Psi2, K )
-
-    # now try exact solution (true Theta and Q), here it is recoverable in theory if we don't penalize!
-    Psi2 <- update_Psi( Theta, Q )
-    expect_equal( Psi2, Psi )
-
-    # test zero alpha version with random Q
-    Psi2 <- update_Psi( Theta, Q2 )
-    validate_Psi( Psi2, K )
 })
 
 test_that( 'update_Q works', {
@@ -473,25 +442,6 @@ test_that( 'positive_definite works', {
 })
 
 test_that( 'admixcor works', {
-    # for this test, we don't have to fully converge (even in toy data it sometimes takes too long)
-    # this stops in a single iteration in tests!
-    tol <- 1e-2 # default ~1e-8
-    
-    # first test default unregularized version
-    expect_silent(
-        obj <- admixcor( Theta, K, tol = tol )
-    )
-    validate_admixcor( obj, n, K )
-    
-    # now test regularized versions
-    expect_silent(
-        obj <- admixcor( Theta, K, tol = tol, gamma = gamma )
-    )
-    validate_admixcor( obj, n, K )
-    # TODO: max(Psi, 1) (`actual`) not equal to 1 (`expected`).
-})
-
-test_that( 'admixcor works with EVD input', {
     # for this test, we don't have to fully converge (even in toy data it sometimes takes too long)
     # this stops in a single iteration in tests!
     tol <- 1e-2 # default ~1e-8

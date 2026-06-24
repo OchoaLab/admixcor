@@ -1,6 +1,6 @@
 #' @export
 admixcor <- function(
-                     Theta,
+                     ThetaEVD,
                      K,
                      gamma = 0,
                      gamma_scale = TRUE,
@@ -10,15 +10,9 @@ admixcor <- function(
                      ties_none = FALSE,
 		     tol_stretch = -0.01
                      ) {
-    # new version has EVD calculated outside (ideally without ever having Theta explicitly)
-    if ( is.list( Theta ) ) {
-        # just have to transform data very slightly in this special case
-        ThetaSR <- theta_square_root_from_trunc_evd( Theta, K )
-    } else if ( is.matrix( Theta ) ) {
-        # decompose Theta for "linear" objective
-        ThetaSR <- theta_square_root( Theta, K )
-    } else
-        stop( 'Theta must be a matrix or a list with `vectors` and `values`!' )
+    # EVD must be calculated outside (ideally without ever having Theta explicitly)
+    # just have to transform data very slightly in this special case
+    ThetaSR <- theta_square_root( ThetaEVD, K )
     
     # number of individuals is number of rows of ThetaSR
     n <- nrow( ThetaSR )
@@ -44,7 +38,7 @@ admixcor <- function(
 
     # initialize run-specific variables
     # Q is random (varies per run) but L and R are fixed
-    Vars <- initialize( ThetaSR, K, n )
+    Vars <- initialize( K, n )
     Q0 <- Vars$Q
     L0 <- Vars$L
     R0 <- Vars$R
@@ -82,7 +76,7 @@ admixcor <- function(
         if ( L_singular1 ) {
             # if we encounter a singular case we scrap the current solution and draw a completely new one, essentially start from scratch again (but without restarting iteration count)
             # while we could re-draw only Q, this risks a bad L still influencing the R we pick and therefore the next Q, so instead we re-draw everything!
-            Vars <- initialize( ThetaSR, K, n )
+            Vars <- initialize( K, n )
             Q1 <- Vars$Q
             L1 <- Vars$L
             R1 <- Vars$R

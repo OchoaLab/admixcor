@@ -202,3 +202,7 @@ Non-code updates:
 
 - Function `admixcor` added option `gamma_scale`, to prevent default scaling by `n/K`.
 - Minor edits to `glmnet` commands in response to a deprecation on their end.
+
+# admixcor 0.0.39.9000 (2026-06-23)
+
+- Function `admixcor` main input must now be `eigen` object (full coancestry matrix is no longer accepted).

@@ -1,13 +1,6 @@
-# uses EVD to calculate a matrix square root
-# it is truncated to the top K dimensions, so it's not an exact square root
-theta_square_root <- function( Theta, K ) {
-    evd <- eigen( Theta )
-    theta_square_root_from_trunc_evd( evd, K )
-}
-
 # version that assumes truncated EVD has been calculated outside
 # K is for further truncation (as we might have calculated EVD on the largest K but want to consider lower K now); for now not optional
-theta_square_root_from_trunc_evd <- function( evd, K ) {
+theta_square_root <- function( evd, K ) {
     # some quick checks before the main computation
     if ( !is.list( evd ) )
         stop( '`evd` must be a list!' )
