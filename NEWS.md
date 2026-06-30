@@ -206,3 +206,7 @@ Non-code updates:
 # admixcor 0.0.39.9000 (2026-06-23)
 
 - Function `admixcor` main input must now be `eigen` object (full coancestry matrix is no longer accepted).
+
+# admixcor 0.0.40.9000 (2026-06-29)
+
+- Function `admixcor` removed option `gamma_scale` (now internally set to `FALSE`, the opposite of the previous default)

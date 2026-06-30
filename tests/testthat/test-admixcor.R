@@ -16,8 +16,7 @@ Theta_FULL <- tcrossprod( Q %*% Psi, Q )
 # and its EVD
 evd <- eigen( Theta_FULL )
 # some default values for the regularization parameters; light regularization is ideal
-alpha <- 1e-5
-gamma <- 1e-5
+gamma <- 1e-4
 # constant used in regularized expressions
 I <- diag( 1, K, K )
 # a random quanitity for quadcomp tests
@@ -458,11 +457,5 @@ test_that( 'admixcor works', {
     )
     validate_admixcor( obj, n, K )
     # TODO: max(Psi, 1) (`actual`) not equal to 1 (`expected`).
-
-    # test new scaling option
-    expect_silent(
-        obj <- admixcor( evd, K, tol = tol, gamma = gamma, gamma_scale = FALSE )
-    )
-    validate_admixcor( obj, n, K )
 })
 
