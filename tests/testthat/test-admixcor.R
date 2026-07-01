@@ -457,5 +457,11 @@ test_that( 'admixcor works', {
     )
     validate_admixcor( obj, n, K )
     # TODO: max(Psi, 1) (`actual`) not equal to 1 (`expected`).
+
+    # test with new objective stopping
+    expect_silent(
+        obj <- admixcor( evd, K, tol = tol, gamma = gamma, stop_by_obj = TRUE )
+    )
+    validate_admixcor( obj, n, K )
 })
 

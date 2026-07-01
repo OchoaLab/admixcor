@@ -210,3 +210,7 @@ Non-code updates:
 # admixcor 0.0.40.9000 (2026-06-29)
 
 - Function `admixcor` removed option `gamma_scale` (now internally set to `FALSE`, the opposite of the previous default)
+
+# admixcor 0.0.41.9000 (2026-06-30)
+
+- Function `admixcor` added option `stop_by_obj` to use the objective delta as the stopping criterion (default is to use Q delta), and reduced `nstep_max` from 100k to 10k.

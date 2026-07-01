@@ -4,10 +4,11 @@ admixcor <- function(
                      K,
                      gamma = 0,
                      tol = sqrt( .Machine$double.eps ), # 1e-15
-                     nstep_max = 100000,
+                     nstep_max = 10000,
                      report_freq = 1,
                      ties_none = FALSE,
-		     tol_stretch = -0.01
+		     tol_stretch = -0.01,
+                     stop_by_obj = FALSE
                      ) {
     # EVD must be calculated outside (ideally without ever having Theta explicitly)
     # just have to transform data very slightly in this special case
@@ -42,6 +43,7 @@ admixcor <- function(
     # initialize gradient norms to ensure first iteration occurs
     # has to be reset after every run!
     ndQ <- Inf
+    conv <- ndQ
 
     # initialize counter, run-specific!
     nstep <- 0
@@ -55,7 +57,7 @@ admixcor <- function(
     dobjs <- c( dobjs, NA )
     L_singulars <- c( L_singulars, L_singular0 )
     
-    while ( ndQ > tol ) {
+    while ( conv > tol ) {
         # increment counter, break if needed
         nstep <- nstep + 1
         if ( nstep > nstep_max )
@@ -91,6 +93,8 @@ admixcor <- function(
         # and its delta too (this matches norm formulations above)
         # use first value only (total objective, including penalty terms!)
         df <- abs( f1[1L] - f0[1L] )
+        # set convergence criterion
+        conv <- if ( stop_by_obj ) df else ndQ
 
         # update variables for next iteration
         Q0 <- Q1
